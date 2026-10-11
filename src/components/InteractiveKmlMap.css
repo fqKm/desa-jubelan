@@ -1,0 +1,310 @@
+/* ==========================================================================
+   Interactive KML Map Stylesheet (Leaflet Satellite Integration)
+   ========================================================================== */
+
+.interactive-kml-map-wrapper {
+  position: relative;
+  width: 100%;
+  height: 580px;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--site-border);
+  background-color: #141a16;
+  display: flex;
+  flex-direction: column;
+}
+
+.leaflet-map-canvas {
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  background-color: #111613;
+}
+
+/* Toolbar Overlay */
+.map-toolbar-overlay {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.map-tag-indicator {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(20, 24, 21, 0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+.dot-live {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #4ade80;
+  box-shadow: 0 0 8px #4ade80;
+}
+
+.map-action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.btn-map-control {
+  background-color: rgba(20, 24, 21, 0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-map-control:hover {
+  background-color: #ffffff;
+  color: #14130f;
+  border-color: #ffffff;
+}
+
+/* Layer Switcher Dropdown */
+.layer-switcher-wrap {
+  position: relative;
+}
+
+.layer-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 250px;
+  background-color: rgba(20, 24, 21, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  z-index: 50;
+  animation: fadeInDropdown 0.15s ease;
+}
+
+@keyframes fadeInDropdown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.layer-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.layer-option-btn:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.layer-option-btn.active {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.layer-icon {
+  font-size: 18px;
+}
+
+.layer-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.layer-sub {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.65);
+  margin-top: 2px;
+}
+
+/* Map KML Legend Bar */
+.map-kml-legend {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 30;
+  background-color: rgba(20, 24, 21, 0.88);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.legend-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.legend-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.legend-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.legend-pill-btn:hover {
+  transform: translateY(-1px);
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.legend-pill-btn.active {
+  background-color: #ffffff;
+  color: #14130f;
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.3);
+}
+
+.pill-color-indicator {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Make Dusun polygons show pointer cursor and always receive pointer events */
+.dusun-satellite-polygon {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure village boundary passes through clicks to underlying dusuns */
+.desa-boundary-polygon {
+  pointer-events: none !important;
+  cursor: default;
+}
+
+
+.satellite-dusun-tooltip {
+  background-color: rgba(20, 24, 21, 0.92) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 8px !important;
+  font-family: var(--font-sans) !important;
+  font-size: 12px !important;
+  padding: 6px 12px !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+.satellite-dusun-tooltip::before {
+  display: none !important;
+}
+
+.kml-tooltip-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tooltip-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* Leaflet Zoom Control Styling on Satellite */
+.leaflet-top.leaflet-left {
+  top: 58px;
+  left: 14px;
+}
+
+.leaflet-control-zoom {
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  background-color: rgba(20, 24, 21, 0.88) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.leaflet-control-zoom a {
+  background-color: transparent !important;
+  color: #ffffff !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+  width: 32px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+  font-size: 16px !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+  .interactive-kml-map-wrapper {
+    height: 420px;
+  }
+  .map-kml-legend {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+  .legend-title {
+    display: none;
+  }
+  .legend-pill-btn {
+    font-size: 11px;
+    padding: 4px 9px;
+  }
+}

@@ -1,0 +1,241 @@
+/* ============================================================
+   AdminLogin.css — Login portal perangkat desa
+   Setema dengan PublicWebsite: warm/earthy, Inter, clean
+   ============================================================ */
+
+/* ── Full-page layout ── */
+.al-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--site-bg-canvas);
+  padding: 24px 16px;
+  position: relative;
+}
+
+/* ── Back button ── */
+.al-back {
+  position: absolute;
+  top: 24px;
+  left: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: none;
+  border: none;
+  color: var(--site-text-secondary);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 6px 2px;
+  transition: color 0.15s ease;
+}
+
+.al-back:hover {
+  color: var(--site-text-primary);
+}
+
+/* ── Card ── */
+.al-card {
+  width: 100%;
+  max-width: 380px;
+  background-color: var(--site-bg-card);
+  border: 1px solid var(--site-border);
+  border-radius: 16px;
+  padding: 40px 36px 32px;
+  box-shadow: 0 4px 24px rgba(20, 19, 15, 0.06);
+}
+
+/* Shake on wrong password */
+.al-shake {
+  animation: al-shake 0.45s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes al-shake {
+  0%, 100% { transform: translateX(0); }
+  15%  { transform: translateX(-7px); }
+  30%  { transform: translateX(7px); }
+  45%  { transform: translateX(-5px); }
+  60%  { transform: translateX(5px); }
+  75%  { transform: translateX(-3px); }
+  90%  { transform: translateX(3px); }
+}
+
+/* ── Brand / Wordmark ── */
+.al-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.al-logo {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.al-brand-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--site-text-primary);
+  letter-spacing: -0.2px;
+  line-height: 1.2;
+}
+
+.al-brand-sub {
+  font-size: 11px;
+  color: var(--site-text-secondary);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* ── Divider ── */
+.al-divider {
+  height: 1px;
+  background-color: var(--site-border);
+  margin-bottom: 28px;
+}
+
+/* ── Form ── */
+.al-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.al-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.al-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--site-text-secondary);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.al-input {
+  width: 100%;
+  padding: 11px 14px;
+  background-color: var(--site-bg-subtle);
+  border: 1px solid var(--site-border);
+  border-radius: 8px;
+  color: var(--site-text-primary);
+  font-size: 14.5px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  -webkit-text-fill-color: var(--site-text-primary);
+}
+
+.al-input::placeholder {
+  color: var(--site-text-secondary);
+  opacity: 0.5;
+}
+
+.al-input:focus {
+  border-color: var(--site-accent-green);
+  background-color: var(--site-bg-card);
+  box-shadow: 0 0 0 3px rgba(149, 177, 156, 0.15);
+}
+
+.al-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Error message ── */
+.al-error {
+  font-size: 13px;
+  color: #b45c5c;
+  line-height: 1.45;
+  margin-top: -4px;
+}
+
+/* ── Submit ── */
+.al-submit {
+  width: 100%;
+  padding: 12px;
+  margin-top: 4px;
+  background-color: var(--color-primary);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: 0.1px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.al-submit:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+
+.al-submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Spinner ── */
+.al-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: al-spin 0.65s linear infinite;
+}
+
+@keyframes al-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Footer note ── */
+.al-note {
+  margin-top: 20px;
+  font-size: 11.5px;
+  color: var(--site-text-secondary);
+  opacity: 0.6;
+  text-align: center;
+  line-height: 1.55;
+}
+
+/* ── Dark mode ── */
+[data-theme="dark"] .al-card {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .al-submit {
+  background-color: var(--site-accent-green);
+  color: #0d120f;
+}
+
+[data-theme="dark"] .al-submit:hover:not(:disabled) {
+  background-color: #6b9474;
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .al-card {
+    padding: 32px 24px 28px;
+  }
+
+  .al-back {
+    top: 16px;
+    left: 16px;
+  }
+}
