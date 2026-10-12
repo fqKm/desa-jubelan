@@ -14,11 +14,15 @@ import {
   CheckCircle2,
   Globe,
   UploadCloud,
-  LogOut
+  LogOut,
+  ShieldCheck,
+  KeyRound,
+  UserPlus
 } from 'lucide-react';
 import type { Dusun, UMKM, Berita, Dokumen, Pengumuman, AppConfig } from '../types';
 import { dataService } from '../services/dataService';
 import { MediumEditor } from './MediumEditor';
+import { getAdminAccounts, saveAdminAccounts } from './AdminLogin';
 import './AdminPanel.css';
 
 interface AdminPanelProps {
@@ -42,7 +46,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   config,
   onRefreshData
 }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'berita' | 'dusun' | 'umkm' | 'dokumen' | 'pengumuman' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'berita' | 'dusun' | 'umkm' | 'dokumen' | 'pengumuman' | 'settings' | 'admins'>('dashboard');
+
+  // Admin Credential states
+  const [adminAccounts, setAdminAccounts] = useState(() => getAdminAccounts());
+  const [newAdminUser, setNewAdminUser] = useState('');
+  const [newAdminPass, setNewAdminPass] = useState('');
+  const [newAdminName, setNewAdminName] = useState('');
 
   // Modal states
   const [modalType, setModalType] = useState<'none' | 'berita' | 'dusun' | 'umkm' | 'dokumen' | 'pengumuman'>('none');
@@ -227,6 +237,46 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     showToast('Konfigurasi Google Sheets berhasil disimpan!');
   };
 
+  // Handlers Kredensial Admin
+  const handleAddAdminCredential = (e: React.FormEvent) => {
+    e.preventDefault();
+    const u = newAdminUser.trim();
+    const p = newAdminPass.trim();
+    if (!u || !p) {
+      showToast('Username dan password tidak boleh kosong.');
+      return;
+    }
+    if (adminAccounts.some(acc => acc.username.toLowerCase() === u.toLowerCase())) {
+      showToast(`Username "${u}" sudah digunakan.`);
+      return;
+    }
+
+    const updated = [
+      ...adminAccounts,
+      { username: u, password: p, name: newAdminName.trim() || `Admin (${u})` }
+    ];
+    setAdminAccounts(updated);
+    saveAdminAccounts(updated);
+    setNewAdminUser('');
+    setNewAdminPass('');
+    setNewAdminName('');
+    showToast(`Akun admin "${u}" berhasil ditambahkan!`);
+  };
+
+  const handleDeleteAdminCredential = (username: string) => {
+    if (adminAccounts.length <= 1) {
+      showToast('Tidak dapat menghapus akun terakhir.');
+      return;
+    }
+    showConfirm(`Hapus kredensial login admin "${username}"? Akun ini tidak akan dapat login lagi.`, () => {
+      closeConfirm();
+      const updated = adminAccounts.filter(acc => acc.username !== username);
+      setAdminAccounts(updated);
+      saveAdminAccounts(updated);
+      showToast(`Akun admin "${username}" berhasil dihapus.`);
+    });
+  };
+
   return (
     <div className="admin-container">
       {/* Toast Notification */}
@@ -278,7 +328,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <img
               src="/Logo_Kabupaten_Semarang.svg"
               alt="Logo Kabupaten Semarang"
-              style={{ width: 300, height: 300, objectFit: 'contain' }}
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
           </div>
           <div>
@@ -338,7 +388,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <span>Pengumuman Warga</span>
           </button>
 
-          <div className="nav-section-title">Integrasi Cloud</div>
+          <div className="nav-section-title">Pengaturan & Sistem</div>
+
+          <button
+            className={`nav-btn ${activeTab === 'admins' ? 'active' : ''}`}
+            onClick={() => setActiveTab('admins')}
+          >
+            <ShieldCheck size={18} />
+            <span>Kredensial Admin</span>
+          </button>
 
           <button
             className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
@@ -824,6 +882,143 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </button>
                 </div>
               </form>
+            </div>
+          )}
+
+          {/* TAB: KREDENSIAL LOGIN ADMIN */}
+          {activeTab === 'admins' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              {/* Form Tambah Kredensial Baru */}
+              <div className="content-card" style={{ padding: 28 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                  <div style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 10,
+                    background: 'rgba(34, 197, 94, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--color-primary)'
+                  }}>
+                    <UserPlus size={22} />
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Tambah Kredensial Admin Baru</h3>
+                    <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)' }}>
+                      Buat username dan password baru agar perangkat desa lain dapat login ke panel admin.
+                    </p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleAddAdminCredential} style={{ maxWidth: 650, marginTop: 16 }}>
+                  <div className="form-group">
+                    <label className="form-label">Nama Perangkat / Pemegang Akun</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={newAdminName}
+                      onChange={e => setNewAdminName(e.target.value)}
+                      placeholder="Contoh: Sekretaris Desa / Kaur Keuangan"
+                    />
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label">Username Login *</label>
+                      <input
+                        type="text"
+                        required
+                        className="form-control"
+                        value={newAdminUser}
+                        onChange={e => setNewAdminUser(e.target.value)}
+                        placeholder="Contoh: sekdes_jubelan"
+                        autoComplete="off"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Password *</label>
+                      <input
+                        type="password"
+                        required
+                        className="form-control"
+                        value={newAdminPass}
+                        onChange={e => setNewAdminPass(e.target.value)}
+                        placeholder="Minimal 6 karakter aman"
+                        autoComplete="new-password"
+                      />
+                    </div>
+                  </div>
+
+                  <button type="submit" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                    <Plus size={16} />
+                    <span>Tambahkan Akun Admin</span>
+                  </button>
+                </form>
+              </div>
+
+              {/* Daftar Akun Admin Tersimpan */}
+              <div className="content-card" style={{ padding: 28 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <KeyRound size={20} color="var(--color-primary)" />
+                    <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>Daftar Kredensial Admin Aktif</h3>
+                  </div>
+                  <span style={{ fontSize: 12, background: 'var(--bg-muted, #f1f5f9)', padding: '4px 10px', borderRadius: 999, fontWeight: 600 }}>
+                    Total: {adminAccounts.length} Akun
+                  </span>
+                </div>
+
+                <div className="table-responsive">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>No</th>
+                        <th>Nama Akun / Deskripsi</th>
+                        <th>Username</th>
+                        <th>Password</th>
+                        <th>Status</th>
+                        <th style={{ textAlign: 'center' }}>Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {adminAccounts.map((acc, idx) => (
+                        <tr key={acc.username + idx}>
+                          <td style={{ width: 50 }}>{idx + 1}</td>
+                          <td>
+                            <strong>{acc.name || 'Admin'}</strong>
+                          </td>
+                          <td>
+                            <code style={{ background: '#e2e8f0', padding: '3px 8px', borderRadius: 6, fontWeight: 600, fontSize: 13 }}>
+                              {acc.username}
+                            </code>
+                          </td>
+                          <td>
+                            <span style={{ letterSpacing: 2, color: 'var(--text-muted)' }}>••••••••</span>
+                          </td>
+                          <td>
+                            <span className="badge badge-success" style={{ fontSize: 11, padding: '3px 8px' }}>
+                              Aktif
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <button
+                              type="button"
+                              className="btn-icon danger"
+                              title="Hapus Kredensial Ini"
+                              disabled={adminAccounts.length <= 1}
+                              onClick={() => handleDeleteAdminCredential(acc.username)}
+                              style={{ opacity: adminAccounts.length <= 1 ? 0.4 : 1, cursor: adminAccounts.length <= 1 ? 'not-allowed' : 'pointer' }}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
         </div>

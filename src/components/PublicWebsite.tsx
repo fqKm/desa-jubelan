@@ -105,7 +105,7 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
               <img
                 src="/Logo_Kabupaten_Semarang.svg"
                 alt="Logo Kabupaten Semarang"
-                style={{ width: 240, height: 240, objectFit: 'contain' }}
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
               />
             </div>
             <div className="brand-text">
@@ -182,7 +182,7 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
         id="beranda"
         className="village-hero"
         style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1600&auto=format&fit=crop&q=80')`
+          backgroundImage: `url('/hero-desa-jubelan.jpg')`
         }}
       >
         <div className="hero-overlay"></div>
@@ -610,7 +610,7 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                 <img
                   src="/Logo_Kabupaten_Semarang.svg"
                   alt="Logo Kabupaten Semarang"
-                  style={{ width: 240, height: 240, objectFit: 'contain' }}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
               </div>
               <div className="brand-text">

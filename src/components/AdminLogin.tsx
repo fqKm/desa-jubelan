@@ -12,6 +12,39 @@ interface AdminLoginProps {
   onBack: () => void;
 }
 
+const ADMIN_USERS_STORAGE_KEY = 'desa_jubelan_admin_users';
+
+interface AdminAccount {
+  username: string;
+  password: string;
+  name?: string;
+}
+
+export function getAdminAccounts(): AdminAccount[] {
+  const defaultAcc: AdminAccount = {
+    username: ADMIN_USERNAME,
+    password: ADMIN_PASSWORD,
+    name: 'Admin Utama (Default)'
+  };
+  try {
+    const raw = localStorage.getItem(ADMIN_USERS_STORAGE_KEY);
+    if (!raw) return [defaultAcc];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      // Pastikan akun default tetap ada jika belum terdaftar
+      const hasDefault = parsed.some((u: AdminAccount) => u.username === ADMIN_USERNAME);
+      return hasDefault ? parsed : [defaultAcc, ...parsed];
+    }
+  } catch {
+    // fallback default
+  }
+  return [defaultAcc];
+}
+
+export function saveAdminAccounts(accounts: AdminAccount[]) {
+  localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(accounts));
+}
+
 export function isAdminSessionValid(): boolean {
   try {
     const raw = sessionStorage.getItem(SESSION_KEY);
@@ -68,7 +101,10 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBack }
     setError(null);
     await new Promise(r => setTimeout(r, 500));
 
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    const accounts = getAdminAccounts();
+    const isValid = accounts.some(acc => acc.username === username.trim() && acc.password === password);
+
+    if (isValid) {
       createAdminSession();
       setLoading(false);
       onLoginSuccess();
