@@ -3,11 +3,10 @@ import { dusun, umkm, berita, dokumen, pengumuman } from '../../src/db/schema';
 import { desc, eq } from 'drizzle-orm';
 
 /**
- * Vercel Serverless Function (Edge)
+ * Vercel Serverless Function (Node.js)
  * Route: GET  /api/collection/[collection]
  *        POST /api/collection/[collection]
  */
-export const config = { runtime: 'edge' };
 
 const ALLOWED = ['dusun', 'umkm', 'berita', 'dokumen', 'pengumuman'] as const;
 type AllowedCollection = typeof ALLOWED[number];

@@ -2,11 +2,10 @@ import { db } from '../src/db';
 import { config } from '../src/db/schema';
 
 /**
- * Vercel Serverless Function (Edge)
+ * Vercel Serverless Function (Node.js)
  * Route: GET /api/config   → Ambil semua config sebagai key-value object
  *        PUT /api/config   → Update/upsert config keys
  */
-export const config_runtime = { runtime: 'edge' };
 
 export default async function handler(req: Request) {
   // GET — return { kepala_desa: '...', mode: '...' }

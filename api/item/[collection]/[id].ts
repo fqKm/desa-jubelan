@@ -1,12 +1,11 @@
-import { db } from '../../../../src/db';
-import { dusun, umkm, berita, dokumen, pengumuman } from '../../../../src/db/schema';
+import { db } from '../../../src/db';
+import { dusun, umkm, berita, dokumen, pengumuman } from '../../../src/db/schema';
 import { eq } from 'drizzle-orm';
 
 /**
- * Vercel Serverless Function (Edge)
+ * Vercel Serverless Function (Node.js)
  * Route: DELETE /api/item/[collection]/[id]
  */
-export const config = { runtime: 'edge' };
 
 const ALLOWED = ['dusun', 'umkm', 'berita', 'dokumen', 'pengumuman'] as const;
 type AllowedCollection = typeof ALLOWED[number];
