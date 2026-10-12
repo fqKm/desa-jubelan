@@ -6,7 +6,6 @@ import {
   Store,
   FileText,
   Bell,
-  Settings,
   Plus,
   RefreshCw,
   Edit2,
@@ -19,7 +18,7 @@ import {
   KeyRound,
   UserPlus
 } from 'lucide-react';
-import type { Dusun, UMKM, Berita, Dokumen, Pengumuman, AppConfig } from '../types';
+import type { Dusun, UMKM, Berita, Dokumen, Pengumuman } from '../types';
 import { dataService } from '../services/dataService';
 import { MediumEditor } from './MediumEditor';
 import { getAdminAccounts, saveAdminAccounts } from './AdminLogin';
@@ -32,7 +31,6 @@ interface AdminPanelProps {
   beritaList: Berita[];
   dokumenList: Dokumen[];
   pengumumanList: Pengumuman[];
-  config: AppConfig;
   onRefreshData: () => void;
 }
 
@@ -43,10 +41,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   beritaList,
   dokumenList,
   pengumumanList,
-  config,
   onRefreshData
 }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'berita' | 'dusun' | 'umkm' | 'dokumen' | 'pengumuman' | 'settings' | 'admins'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'berita' | 'dusun' | 'umkm' | 'dokumen' | 'pengumuman' | 'admins'>('dashboard');
 
   // Admin Credential states
   const [adminAccounts, setAdminAccounts] = useState(() => getAdminAccounts());
@@ -222,20 +219,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     });
   };
 
-  // Handlers Settings
-  const handleSaveConfig = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const newCfg: AppConfig = {
-      mode: fd.get('mode') as 'local' | 'google_sheets',
-      appsScriptUrl: (fd.get('appsScriptUrl') as string) || '',
-      spreadsheetId: (fd.get('spreadsheetId') as string) || '',
-      kepala_desa: (fd.get('kepala_desa') as string) || ''
-    };
-    dataService.saveConfig(newCfg);
-    onRefreshData();
-    showToast('Konfigurasi Google Sheets berhasil disimpan!');
-  };
+
 
   // Handlers Kredensial Admin
   const handleAddAdminCredential = (e: React.FormEvent) => {
@@ -333,7 +317,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
           <div>
             <div className="village-title">Desa Jubelan</div>
-            <div className="village-subtitle">Panel Pengelola Cloud</div>
+            <div className="village-subtitle">Portal Admin Desa</div>
           </div>
         </div>
 
@@ -398,13 +382,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <span>Kredensial Admin</span>
           </button>
 
-          <button
-            className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
-            onClick={() => setActiveTab('settings')}
-          >
-            <Settings size={18} />
-            <span>Google Sheets Sync</span>
-          </button>
+
 
           <button
             className="nav-btn nav-btn-exit"
@@ -427,18 +405,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
         <div className="sidebar-footer">
           <div className="status-badge-box">
-            <span className={`status-dot ${config.mode === 'neon' || config.mode === 'google_sheets' ? 'green' : 'amber'}`}></span>
+            <span className="status-dot green"></span>
             <div>
-              <div className="status-title">
-                {config.mode === 'neon' ? 'Neon DB + Vercel Blob'
-                  : config.mode === 'google_sheets' ? 'Google Sheets Sync'
-                  : 'Penyimpanan Lokal'}
-              </div>
-              <div className="status-desc">
-                {config.mode === 'neon' ? 'Tersimpan di cloud'
-                  : config.mode === 'google_sheets' ? 'Terhubung real-time'
-                  : 'Tersimpan di browser'}
-              </div>
+              <div className="status-title">Neon DB + Vercel Blob</div>
+              <div className="status-desc">Tersimpan di cloud</div>
             </div>
           </div>
         </div>
@@ -455,7 +425,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               {activeTab === 'umkm' && 'Data Pelaku Usaha & UMKM'}
               {activeTab === 'dokumen' && 'Repositori Dokumen Publik'}
               {activeTab === 'pengumuman' && 'Pemberitahuan & Pengumuman'}
-              {activeTab === 'settings' && 'Pengaturan Google Sheets API'}
+              {activeTab === 'admins' && 'Kelola Akses Admin'}
             </h1>
             <p className="header-desc">Kelola dan perbarui informasi Desa Jubelan secara real-time</p>
           </div>
@@ -806,84 +776,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
           )}
 
-          {/* TAB: SETTINGS GOOGLE SHEETS */}
-          {activeTab === 'settings' && (
-            <div className="content-card" style={{ padding: 28 }}>
-              <div className="help-box">
-                <h4>🚀 Cara Menghubungkan Google Spreadsheet Anda</h4>
-                <p>
-                  Semua data desa dapat langsung tersimpan dan diubah di Google Sheets Anda tanpa biaya server:
-                </p>
-                <ol>
-                  <li>Buka <strong>https://script.google.com</strong> lalu buat Proyek Baru.</li>
-                  <li>Copy kode dari file <code>google-apps-script-backend.js</code> yang sudah kami sediakan di folder proyek.</li>
-                  <li>Isi <code>SPREADSHEET_ID</code> Anda, lalu klik <strong>Deploy &gt; New Deployment &gt; Web App</strong> (Access: Anyone).</li>
-                  <li>Tempelkan tautan Web App URL di bawah ini lalu simpan.</li>
-                </ol>
-              </div>
 
-              <form onSubmit={handleSaveConfig} style={{ maxWidth: 650, marginTop: 24 }}>
-                <div className="form-group">
-                  <label className="form-label">Mode Penyimpanan Data</label>
-                  <select name="mode" className="form-control" defaultValue={config.mode}>
-                    <option value="local">Penyimpanan Lokal Browser (Offline / Local Storage Cepat)</option>
-                    <option value="google_sheets">Google Sheets Terhubung (Real-time Cloud Sync)</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Google Apps Script Web App URL</label>
-                  <input
-                    type="url"
-                    name="appsScriptUrl"
-                    className="form-control"
-                    defaultValue={config.appsScriptUrl}
-                    placeholder="https://script.google.com/macros/s/AKfycb.../exec"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">ID Google Spreadsheet</label>
-                  <input
-                    type="text"
-                    name="spreadsheetId"
-                    className="form-control"
-                    defaultValue={config.spreadsheetId}
-                    placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Nama Kepala Desa</label>
-                  <input
-                    type="text"
-                    name="kepala_desa"
-                    className="form-control"
-                    defaultValue={config.kepala_desa}
-                    placeholder="Masukkan nama kepala desa..."
-                  />
-                </div>
-
-                <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-                  <button type="submit" className="btn btn-primary">Simpan Pengaturan</button>
-                  <button
-                    type="button"
-                    className="btn btn-outline"
-                    onClick={() => {
-                      showConfirm('Reset semua data ke data default Desa Jubelan? Semua data yang sudah diubah akan hilang.', () => {
-                        closeConfirm();
-                        dataService.resetAllData();
-                        onRefreshData();
-                        showToast('Data default berhasil dimuat ulang!');
-                      });
-                    }}
-                  >
-                    Reset Data Default
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
 
           {/* TAB: KREDENSIAL LOGIN ADMIN */}
           {activeTab === 'admins' && (

@@ -3,7 +3,7 @@ import { PublicWebsite } from './components/PublicWebsite';
 import { AdminPanel } from './components/AdminPanel';
 import { AdminLogin, isAdminSessionValid, destroyAdminSession } from './components/AdminLogin';
 import { ArticleDetailPage } from './components/ArticleDetailPage';
-import type { Dusun, UMKM, Berita, Dokumen, Pengumuman, AppConfig } from './types';
+import type { Dusun, UMKM, Berita, Dokumen, Pengumuman } from './types';
 import { dataService } from './services/dataService';
 
 // ─────────────────────────────────────────────────────────────
@@ -38,25 +38,23 @@ export const App: React.FC = () => {
   const [beritaList, setBeritaList] = useState<Berita[]>([]);
   const [dokumenList, setDokumenList] = useState<Dokumen[]>([]);
   const [pengumumanList, setPengumumanList] = useState<Pengumuman[]>([]);
-  const [config, setConfig] = useState<AppConfig>({ mode: 'local', appsScriptUrl: '', spreadsheetId: '' });
+
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [dusun, umkm, berita, dokumen, pengumuman, cfg] = await Promise.all([
+      const [dusun, umkm, berita, dokumen, pengumuman] = await Promise.all([
         dataService.getCollection<Dusun>('dusun'),
         dataService.getCollection<UMKM>('umkm'),
         dataService.getCollection<Berita>('berita'),
         dataService.getCollection<Dokumen>('dokumen'),
         dataService.getCollection<Pengumuman>('pengumuman'),
-        dataService.loadConfig()
       ]);
       setDusunList(dusun);
       setUmkmList(umkm);
       setBeritaList(berita);
       setDokumenList(dokumen);
       setPengumumanList(pengumuman);
-      setConfig(cfg);
     } catch (err) {
       console.error('Error loading data:', err);
     } finally {
@@ -67,20 +65,18 @@ export const App: React.FC = () => {
   // Silent refresh: updates data without showing loading screen
   const silentRefresh = async () => {
     try {
-      const [dusun, umkm, berita, dokumen, pengumuman, cfg] = await Promise.all([
+      const [dusun, umkm, berita, dokumen, pengumuman] = await Promise.all([
         dataService.getCollection<Dusun>('dusun'),
         dataService.getCollection<UMKM>('umkm'),
         dataService.getCollection<Berita>('berita'),
         dataService.getCollection<Dokumen>('dokumen'),
         dataService.getCollection<Pengumuman>('pengumuman'),
-        dataService.loadConfig()
       ]);
       setDusunList(dusun);
       setUmkmList(umkm);
       setBeritaList(berita);
       setDokumenList(dokumen);
       setPengumumanList(pengumuman);
-      setConfig(cfg);
     } catch (err) {
       console.error('Error refreshing data:', err);
     }
@@ -149,7 +145,6 @@ export const App: React.FC = () => {
           beritaList={beritaList}
           dokumenList={dokumenList}
           pengumumanList={pengumumanList}
-          config={config}
           onRefreshData={silentRefresh}
         />
       )}
@@ -166,7 +161,6 @@ export const App: React.FC = () => {
           onSelectNews={(news) => setActiveArticle(news)}
           theme={theme}
           onToggleTheme={toggleTheme}
-          config={config}
         />
       )}
 

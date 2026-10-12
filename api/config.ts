@@ -1,26 +1,21 @@
-import { neon } from '@neondatabase/serverless';
+import { db } from '../src/db';
+import { config } from '../src/db/schema';
 
 /**
- * Vercel Serverless Function
- * Route: GET /api/config        → ambil semua config sebagai key-value object
- *        PUT /api/config        → update/upsert config keys
+ * Vercel Serverless Function (Edge)
+ * Route: GET /api/config   → Ambil semua config sebagai key-value object
+ *        PUT /api/config   → Update/upsert config keys
  */
 export const config_runtime = { runtime: 'edge' };
 
-function getDb() {
-  return neon(process.env.POSTGRES_URL!);
-}
-
 export default async function handler(req: Request) {
-  const sql = getDb();
-
   // GET — return { kepala_desa: '...', mode: '...' }
   if (req.method === 'GET') {
     try {
-      const rows = await sql`SELECT key, value FROM config`;
+      const rows = await db.select().from(config);
       const result: Record<string, string> = {};
       for (const row of rows) {
-        result[row.key as string] = row.value as string;
+        result[row.key] = row.value;
       }
       return Response.json({ status: 'success', data: result });
     } catch (err) {
@@ -34,10 +29,12 @@ export default async function handler(req: Request) {
     try {
       const body: Record<string, string> = await req.json();
       for (const [key, value] of Object.entries(body)) {
-        await sql`
-          INSERT INTO config (key, value) VALUES (${key}, ${value})
-          ON CONFLICT (key) DO UPDATE SET value = ${value}
-        `;
+        await db.insert(config)
+          .values({ key, value })
+          .onConflictDoUpdate({
+            target: config.key,
+            set: { value }
+          });
       }
       return Response.json({ status: 'success' });
     } catch (err) {

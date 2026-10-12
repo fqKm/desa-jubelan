@@ -31,7 +31,6 @@ interface PublicWebsiteProps {
   onSelectNews?: (berita: Berita) => void;
   theme?: 'light' | 'dark';
   onToggleTheme?: () => void;
-  config?: any; // AppConfig
 }
 
 export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
@@ -44,7 +43,6 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
   onSelectNews,
   theme: propTheme,
   onToggleTheme: propToggleTheme,
-  config
 }) => {
   // Theme state: synced with prop or fallback to localStorage
   const [internalTheme, setInternalTheme] = useState<'light' | 'dark'>(() => {
@@ -342,7 +340,7 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                 <div className="block-facts-list">
                   <div className="block-fact-item">
                     <span className="fact-key">Kepala Desa</span>
-                    <span className="fact-val">{config?.kepala_desa || 'Bapak Kepala Desa'}</span>
+                    <span className="fact-val">Bapak Kepala Desa</span>
                   </div>
                   <div className="block-fact-item">
                     <span className="fact-key">Total Kepala Keluarga</span>
