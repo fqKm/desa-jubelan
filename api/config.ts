@@ -16,7 +16,14 @@ export default async function handler(req: Request) {
       for (const row of rows) {
         result[row.key] = row.value;
       }
-      return Response.json({ status: 'success', data: result });
+      return Response.json(
+        { status: 'success', data: result },
+        {
+          headers: {
+            'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=900'
+          }
+        }
+      );
     } catch (err) {
       console.error(err);
       return Response.json({ error: 'DB error' }, { status: 500 });

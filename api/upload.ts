@@ -50,9 +50,11 @@ export default async function handler(req: Request) {
     const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const filename = `desa-jubelan/${Date.now()}-${safeName}`;
 
+    const token = process.env.BLOB_READ_WRITE_TOKEN || process.env.JUBELAN_READ_WRITE_TOKEN;
     const blob = await put(filename, file, {
       access: 'public',
       contentType: file.type,
+      ...(token ? { token } : {})
     });
 
     return Response.json({ status: 'success', url: blob.url });

@@ -35,7 +35,14 @@ export default async function handler(req: Request) {
       } else if (collection === 'pengumuman') {
         rows = await db.select().from(pengumuman).orderBy(desc(pengumuman.updated_at));
       }
-      return Response.json({ status: 'success', data: rows });
+      return Response.json(
+        { status: 'success', data: rows },
+        {
+          headers: {
+            'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=600'
+          }
+        }
+      );
     } catch (err) {
       console.error(err);
       return Response.json({ error: 'DB error' }, { status: 500 });
