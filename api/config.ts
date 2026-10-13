@@ -1,4 +1,4 @@
-import { db } from '../src/db';
+import { db } from '../src/db/index';
 import { config } from '../src/db/schema';
 
 /**

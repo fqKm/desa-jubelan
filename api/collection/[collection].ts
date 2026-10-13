@@ -1,4 +1,4 @@
-import { db } from '../../src/db';
+import { db } from '../../src/db/index';
 import { dusun, umkm, berita, dokumen, pengumuman } from '../../src/db/schema';
 import { desc, eq } from 'drizzle-orm';
 
