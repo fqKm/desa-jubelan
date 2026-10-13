@@ -219,7 +219,7 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
             </div>
             <div className="overview-copy">
               <h3>Visi</h3>
-              <p className="visi-text">"Menjadi desa yang maju, mandiri, dan berkelanjutan."</p>
+              <p className="visi-text">"Sangkan Paraning Dumadi."</p>
               <h3>Misi</h3>
               <ul className="misi-list-simple">
                 <li>Meningkatkan kesejahteraan masyarakat melalui pembangunan infrastruktur.</li>
@@ -632,18 +632,17 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
             <div className="office-address-block">
               <div className="office-title">Kantor Kepala Desa Jubelan</div>
               <div className="office-address">
-                Jl. Palagan No. 36, Dusun Krajan, Desa Jubelan, Kecamatan Sumowono,
-                Kabupaten Semarang, Jawa Tengah 50662
+                Jl. Pangeran Diponegoro No. 36, Jubelan, Kecamatan Sumowono, Kabupaten Semarang (50662)
               </div>
             </div>
 
             <div className="contact-methods-block">
               <a href="https://wa.me/6281234567891" target="_blank" rel="noreferrer" className="contact-method-item">
                 <Phone size={14} strokeWidth={2} />
-                <span>WhatsApp Layanan Desa: 0812-3456-7891</span>
+                <span>WhatsApp Layanan Desa: (0298) 713313</span>
               </a>
               <span className="contact-method-item">
-                <span>Email: pemdes@jubelan.desa.id</span>
+                <span>Email: desajubelan04@gmail.com</span>
               </span>
             </div>
           </div>
@@ -652,7 +651,7 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
           <div className="footer-base-row">
             <span>© 2026 Pemerintah Desa Jubelan. Hak Cipta Dilindungi.</span>
             <span className="emergency-hotline">
-              Emergency 112 • Puskesmas Sumowono (0298) 591118 • Polsek 110
+              Puskesmas Sumowono (0298) 173197
             </span>
           </div>
         </div>
