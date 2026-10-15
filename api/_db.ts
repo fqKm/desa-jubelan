@@ -74,12 +74,14 @@ const schema = { dusun, umkm, berita, dokumen, pengumuman, config };
 
 // ── Database Connection ────────────────────────────────────────
 
-const connectionString =
+const rawConn =
   process.env.POSTGRES_URL ||
   process.env.JUBELAN_POSTGRES_URL ||
   process.env.DATABASE_URL ||
   process.env.JUBELAN_DATABASE_URL_UNPOOLED ||
   '';
+
+const connectionString = rawConn.trim().replace(/^["']|["']$/g, '');
 
 const sql = neon(connectionString);
 export const db = drizzle(sql, { schema });

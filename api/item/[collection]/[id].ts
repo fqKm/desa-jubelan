@@ -38,8 +38,8 @@ export default async function handler(req: Request) {
     }
 
     return Response.json({ status: 'success' });
-  } catch (err) {
-    console.error(err);
-    return Response.json({ error: 'DB error' }, { status: 500 });
+  } catch (err: any) {
+    console.error('[DELETE DB error]', err);
+    return Response.json({ error: err?.message || 'DB error' }, { status: 500 });
   }
 }
