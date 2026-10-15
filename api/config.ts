@@ -1,5 +1,5 @@
-import { db } from '../src/db/index';
-import { config } from '../src/db/schema';
+import { db } from '../src/db/index.js';
+import { config } from '../src/db/schema.js';
 
 /**
  * Vercel Serverless Function (Node.js)
