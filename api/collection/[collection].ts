@@ -1,5 +1,4 @@
-import { db } from '../../src/db/index.js';
-import { dusun, umkm, berita, dokumen, pengumuman } from '../../src/db/schema.js';
+import { db, dusun, umkm, berita, dokumen, pengumuman } from '../_db.js';
 import { desc, eq } from 'drizzle-orm';
 
 /**
