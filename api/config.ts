@@ -33,7 +33,7 @@ export default async function handler(req: Request) {
   // PUT — upsert one or more keys: { kepala_desa: '...', ... }
   if (req.method === 'PUT') {
     try {
-      const body: Record<string, string> = await req.json();
+      const body = (await req.json()) as Record<string, string>;
       for (const [key, value] of Object.entries(body)) {
         await db.insert(config)
           .values({ key, value })

@@ -52,7 +52,7 @@ export default async function handler(req: Request) {
   // POST — tambah / update (upsert) data
   if (req.method === 'POST') {
     try {
-      const body = await req.json();
+      const body: any = await req.json();
       const id = body.id || `${collection}-${Date.now()}`;
       const now = new Date();
 
