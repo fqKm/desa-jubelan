@@ -10,14 +10,14 @@ import { desc, eq } from 'drizzle-orm';
 const ALLOWED = ['dusun', 'umkm', 'berita', 'dokumen', 'pengumuman'] as const;
 type AllowedCollection = typeof ALLOWED[number];
 
-export default async function handler(req: Request) {
-  const url = new URL(req.url);
-  const parts = url.pathname.split('/');
-  const collection = parts[parts.length - 1] as AllowedCollection;
+export default async function handler(req: any) {
+  try {
+    const url = new URL(req.url || '', 'http://localhost');
+    const collection = (url.searchParams.get('collection') || url.pathname.split('/').filter(Boolean).pop()) as AllowedCollection;
 
-  if (!ALLOWED.includes(collection)) {
-    return Response.json({ error: 'Invalid collection' }, { status: 400 });
-  }
+    if (!ALLOWED.includes(collection)) {
+      return Response.json({ error: 'Invalid collection: ' + collection }, { status: 400 });
+    }
 
   // GET — ambil semua data urut descending
   if (req.method === 'GET') {
@@ -51,7 +51,7 @@ export default async function handler(req: Request) {
   // POST — tambah / update (upsert) data
   if (req.method === 'POST') {
     try {
-      const body: any = await req.json();
+      const body: any = typeof req.json === 'function' ? await req.json() : (req.body || {});
       const id = body.id || `${collection}-${Date.now()}`;
       const now = new Date();
 
@@ -193,5 +193,9 @@ export default async function handler(req: Request) {
     }
   }
 
-  return Response.json({ error: 'Method not allowed' }, { status: 405 });
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  } catch (fatalErr: any) {
+    console.error('[Collection Fatal Error]', fatalErr);
+    return Response.json({ error: fatalErr?.message || 'Server error' }, { status: 500 });
+  }
 }
