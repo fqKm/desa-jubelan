@@ -134,11 +134,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       link_maps: (fd.get('link_maps') as string) || ''
     };
 
-    await dataService.saveItem('dusun', item);
-    setModalType('none');
-    setEditingItem(null);
-    onRefreshData();
-    showToast('Data dusun & sensus berhasil diperbarui!');
+    try {
+      await dataService.saveItem('dusun', item);
+      setModalType('none');
+      setEditingItem(null);
+      onRefreshData();
+      showToast('Data dusun & sensus berhasil diperbarui!');
+    } catch (err: any) {
+      showToast('Gagal menyimpan ke database: ' + (err?.message || 'Error koneksi'));
+    }
   };
 
   // Handlers CRUD UMKM
@@ -159,12 +163,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       status: 'active'
     };
 
-    await dataService.saveItem('umkm', item);
-    setModalType('none');
-    setEditingItem(null);
-    setUmkmFoto('');
-    onRefreshData();
-    showToast('Data UMKM berhasil disimpan!');
+    try {
+      await dataService.saveItem('umkm', item);
+      setModalType('none');
+      setEditingItem(null);
+      setUmkmFoto('');
+      onRefreshData();
+      showToast('Data UMKM berhasil disimpan!');
+    } catch (err: any) {
+      showToast('Gagal menyimpan UMKM: ' + (err?.message || 'Error koneksi'));
+    }
   };
 
   // Handlers CRUD Dokumen
@@ -182,11 +190,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       status: 'public'
     };
 
-    await dataService.saveItem('dokumen', item);
-    setModalType('none');
-    setEditingItem(null);
-    onRefreshData();
-    showToast('Dokumen publik berhasil diunggah!');
+    try {
+      await dataService.saveItem('dokumen', item);
+      setModalType('none');
+      setEditingItem(null);
+      onRefreshData();
+      showToast('Dokumen publik berhasil diunggah!');
+    } catch (err: any) {
+      showToast('Gagal menyimpan dokumen: ' + (err?.message || 'Error koneksi'));
+    }
   };
 
   // Handlers CRUD Pengumuman
@@ -202,20 +214,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       tanggal: new Date().toISOString().split('T')[0]
     };
 
-    await dataService.saveItem('pengumuman', item);
-    setModalType('none');
-    setEditingItem(null);
-    onRefreshData();
-    showToast('Pengumuman berhasil dipasang!');
+    try {
+      await dataService.saveItem('pengumuman', item);
+      setModalType('none');
+      setEditingItem(null);
+      onRefreshData();
+      showToast('Pengumuman berhasil dipasang!');
+    } catch (err: any) {
+      showToast('Gagal menyimpan pengumuman: ' + (err?.message || 'Error koneksi'));
+    }
   };
 
   // Handlers Hapus
   const handleDelete = async (collection: 'berita' | 'dusun' | 'umkm' | 'dokumen' | 'pengumuman', id: string) => {
     showConfirm('Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.', async () => {
       closeConfirm();
-      await dataService.deleteItem(collection, id);
-      onRefreshData();
-      showToast('Data berhasil dihapus.');
+      try {
+        await dataService.deleteItem(collection, id);
+        onRefreshData();
+        showToast('Data berhasil dihapus.');
+      } catch (err: any) {
+        showToast('Gagal menghapus data: ' + (err?.message || 'Error koneksi'));
+      }
     });
   };
 
@@ -922,11 +942,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         <MediumEditor
           initialItem={editingItem}
           onSave={async (item) => {
-            await dataService.saveItem('berita', item);
-            setModalType('none');
-            setEditingItem(null);
-            onRefreshData();
-            showToast('Berita berhasil disimpan!');
+            try {
+              await dataService.saveItem('berita', item);
+              setModalType('none');
+              setEditingItem(null);
+              onRefreshData();
+              showToast('Berita berhasil disimpan!');
+            } catch (err: any) {
+              showToast('Gagal menyimpan berita: ' + (err?.message || 'Error koneksi'));
+            }
           }}
           onClose={() => {
             setModalType('none');

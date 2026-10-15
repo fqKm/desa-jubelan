@@ -211,15 +211,11 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
         <div className="site-container">
           <div className="overview-intro">
             <div className="overview-heading">
-              {/* <div className="eyebrow-tag">
-                <span className="eyebrow-dot"></span>
-                <span>Tentang Kami</span>
-              </div> */}
-              <h2>Tagline Desa</h2>
+              <h2>Sangkan Paraning Dumadi</h2>
             </div>
             <div className="overview-copy">
               <h3>Visi</h3>
-              <p className="visi-text">"Sangkan Paraning Dumadi."</p>
+              <p className="visi-text">"Menjadi desa yang maju, mandiri, dan berkelanjutan."</p>
               <h3>Misi</h3>
               <ul className="misi-list-simple">
                 <li>Meningkatkan kesejahteraan masyarakat melalui pembangunan infrastruktur.</li>
