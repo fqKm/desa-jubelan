@@ -45,6 +45,13 @@ export const MediumEditor: React.FC<MediumEditorProps> = ({
     reader.readAsDataURL(file);
 
     setUploading(true);
+    console.groupCollapsed(
+      `%c[UPLOAD REQUEST] POST /api/upload (Berita)`,
+      'color: #9333ea; font-weight: bold; background: #faf5ff; padding: 2px 6px; border-radius: 4px;'
+    );
+    console.log('File:', file.name, `(${file.size} bytes)`, file.type);
+    console.groupEnd();
+
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -52,13 +59,22 @@ export const MediumEditor: React.FC<MediumEditorProps> = ({
         method: 'POST',
         body: formData
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.url) {
-          setThumbnail(data.url);
-        }
+      const data = await res.json().catch(() => ({}));
+
+      console.groupCollapsed(
+        `%c[UPLOAD RESPONSE ${res.status}] POST /api/upload (Berita)`,
+        res.ok ? 'color: #16a34a; font-weight: bold;' : 'color: #dc2626; font-weight: bold;'
+      );
+      console.log('Response:', data);
+      console.groupEnd();
+
+      if (res.ok && data.url) {
+        setThumbnail(data.url);
+      } else {
+        alert('Gagal upload thumbnail ke Blob: ' + (data.error || `HTTP ${res.status}`));
       }
-    } catch {
+    } catch (err: any) {
+      console.error('[MediumEditor] Upload error:', err);
       // Keep base64 data URL if /api/upload endpoint is not available yet
     } finally {
       setUploading(false);

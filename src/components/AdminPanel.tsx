@@ -95,6 +95,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     reader.readAsDataURL(file);
 
     setUploadingFoto(true);
+    console.groupCollapsed(
+      `%c[UPLOAD REQUEST] POST /api/upload`,
+      'color: #9333ea; font-weight: bold; background: #faf5ff; padding: 2px 6px; border-radius: 4px;'
+    );
+    console.log('File:', file.name, `(${file.size} bytes)`, file.type);
+    console.groupEnd();
+
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -102,14 +109,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         method: 'POST',
         body: formData
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.url) {
-          setUmkmFoto(data.url);
-        }
+      const data = await res.json().catch(() => ({}));
+      
+      console.groupCollapsed(
+        `%c[UPLOAD RESPONSE ${res.status}] POST /api/upload`,
+        res.ok ? 'color: #16a34a; font-weight: bold;' : 'color: #dc2626; font-weight: bold;'
+      );
+      console.log('Response:', data);
+      console.groupEnd();
+
+      if (res.ok && data.url) {
+        setUmkmFoto(data.url);
+        showToast('Foto berhasil diupload ke server Vercel Blob!');
+      } else {
+        showToast('Gagal upload ke Blob: ' + (data.error || `HTTP ${res.status}`));
       }
-    } catch {
-      // Data URL fallback tetap aktif
+    } catch (err: any) {
+      console.error('[AdminPanel] Error fetch /api/upload:', err);
+      showToast('Koneksi upload gagal: ' + (err?.message || 'Error'));
     } finally {
       setUploadingFoto(false);
     }

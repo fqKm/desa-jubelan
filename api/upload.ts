@@ -1,28 +1,32 @@
 import { put } from '@vercel/blob';
 
 /**
- * Vercel Serverless Function
+ * Vercel Serverless Function (Edge Runtime)
  * Route: POST /api/upload
  * Body: FormData with field "file"
- * Returns: { url: string }
- *
- * Digunakan untuk upload:
- * - Foto UMKM
- * - Thumbnail Berita
- * - File Dokumen PDF
+ * Returns: { status: 'success', url: string }
  */
+
+export const config = {
+  runtime: 'edge',
+};
+
 export default async function handler(req: Request) {
   if (req.method !== 'POST') {
     return Response.json({ error: 'Method not allowed' }, { status: 405 });
   }
 
   try {
+    console.log('[Upload] Processing upload request...');
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
 
     if (!file) {
+      console.warn('[Upload] File tidak ditemukan di FormData');
       return Response.json({ error: 'No file provided' }, { status: 400 });
     }
+
+    console.log(`[Upload] File received: ${file.name}, size: ${file.size} bytes, type: ${file.type}`);
 
     // Validasi tipe file
     const allowedTypes = [
@@ -46,20 +50,31 @@ export default async function handler(req: Request) {
     }
 
     // Buat nama file unik dengan timestamp
-    const ext = file.name.split('.').pop() ?? 'bin';
     const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const filename = `desa-jubelan/${Date.now()}-${safeName}`;
 
-    const token = process.env.BLOB_READ_WRITE_TOKEN || process.env.JUBELAN_READ_WRITE_TOKEN;
+    const token =
+      process.env.BLOB_READ_WRITE_TOKEN ||
+      process.env.JUBELAN_READ_WRITE_TOKEN ||
+      process.env.VERCEL_BLOB_READ_WRITE_TOKEN;
+
+    if (!token) {
+      console.warn('[Upload WARNING] BLOB_READ_WRITE_TOKEN tidak ditemukan di env!');
+    }
+
     const blob = await put(filename, file, {
       access: 'public',
       contentType: file.type,
       ...(token ? { token } : {})
     });
 
+    console.log(`[Upload SUCCESS] File uploaded to: ${blob.url}`);
     return Response.json({ status: 'success', url: blob.url });
-  } catch (err) {
+  } catch (err: any) {
     console.error('[Upload Error]', err);
-    return Response.json({ error: 'Upload gagal' }, { status: 500 });
+    return Response.json({
+      error: 'Upload gagal: ' + (err?.message || 'Error uploading to Blob'),
+      details: String(err)
+    }, { status: 500 });
   }
 }

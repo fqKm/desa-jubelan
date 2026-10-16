@@ -2,27 +2,48 @@ import { db, dusun, umkm, berita, dokumen, pengumuman } from '../../_db.js';
 import { eq } from 'drizzle-orm';
 
 /**
- * Vercel Serverless Function (Node.js)
+ * Vercel Serverless Function (Node.js & Edge compatible)
  * Route: DELETE /api/item/[collection]/[id]
  */
 
 const ALLOWED = ['dusun', 'umkm', 'berita', 'dokumen', 'pengumuman'] as const;
 type AllowedCollection = typeof ALLOWED[number];
 
-export default async function handler(req: any) {
+function sendResponse(res: any, status: number, data: any) {
+  if (res && typeof res.status === 'function') {
+    return res.status(status).json(data);
+  }
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json' }
+  });
+}
+
+export default async function handler(req: any, res?: any) {
+  const method = req.method || 'DELETE';
+  console.log(`[ITEM START] Method: ${method}, URL: ${req.url}`);
+
   try {
-    if (req.method !== 'DELETE') {
-      return Response.json({ error: 'Method not allowed' }, { status: 405 });
+    if (method !== 'DELETE') {
+      return sendResponse(res, 405, { error: 'Method not allowed' });
     }
 
-    const url = new URL(req.url || '', 'http://localhost');
-    const parts = url.pathname.split('/').filter(Boolean);
-    // /api/item/[collection]/[id]  → parts = ['api','item','collection','id']
-    const collection = (url.searchParams.get('collection') || parts[2]) as AllowedCollection;
-    const id = url.searchParams.get('id') || parts[3];
+    let collection = req.query?.collection as AllowedCollection | undefined;
+    let id = req.query?.id as string | undefined;
+
+    if ((!collection || !id) && req.url) {
+      try {
+        const url = new URL(req.url, 'http://localhost');
+        const parts = url.pathname.split('/').filter(Boolean);
+        collection = (url.searchParams.get('collection') || parts[2]) as AllowedCollection;
+        id = url.searchParams.get('id') || parts[3];
+      } catch {}
+    }
+
+    console.log(`[ITEM DELETE TARGET] Collection: ${collection}, ID: ${id}`);
 
     if (!collection || !id || !ALLOWED.includes(collection)) {
-      return Response.json({ error: 'Invalid params' }, { status: 400 });
+      return sendResponse(res, 400, { error: `Invalid params: collection=${collection}, id=${id}` });
     }
 
     try {
@@ -38,13 +59,20 @@ export default async function handler(req: any) {
         await db.delete(pengumuman).where(eq(pengumuman.id, id));
       }
 
-      return Response.json({ status: 'success' });
+      console.log(`[ITEM DELETE SUCCESS] ${collection} ID: ${id}`);
+      return sendResponse(res, 200, { status: 'success' });
     } catch (err: any) {
-      console.error('[DELETE DB error]', err);
-      return Response.json({ error: err?.message || 'DB error' }, { status: 500 });
+      console.error('[ITEM DELETE ERROR]', err);
+      return sendResponse(res, 500, {
+        error: err?.message || 'DB error',
+        details: String(err)
+      });
     }
   } catch (fatalErr: any) {
-    console.error('[Item Fatal Error]', fatalErr);
-    return Response.json({ error: fatalErr?.message || 'Server error' }, { status: 500 });
+    console.error('[ITEM FATAL ERROR]', fatalErr);
+    return sendResponse(res, 500, {
+      error: fatalErr?.message || 'Server error',
+      details: String(fatalErr)
+    });
   }
 }

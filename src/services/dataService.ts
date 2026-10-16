@@ -9,6 +9,33 @@ interface CacheEntry<T> {
 
 const DEFAULT_CACHE_TTL_MS = 60 * 1000; // 1 menit in-memory cache
 
+// Helper untuk visual logging request & response di Console Browser
+function logRequest(method: string, url: string, payload?: any) {
+  console.groupCollapsed(
+    `%c[API REQUEST] ${method} ${url}`,
+    'color: #2563eb; font-weight: bold; background: #eff6ff; padding: 2px 6px; border-radius: 4px;'
+  );
+  if (payload !== undefined) {
+    console.log('Payload:', payload);
+  }
+  console.log('Timestamp:', new Date().toLocaleTimeString());
+  console.groupEnd();
+}
+
+function logResponse(method: string, url: string, status: number, data?: any) {
+  const isSuccess = status >= 200 && status < 300;
+  console.groupCollapsed(
+    `%c[API RESPONSE ${status}] ${method} ${url}`,
+    isSuccess
+      ? 'color: #16a34a; font-weight: bold; background: #f0fdf4; padding: 2px 6px; border-radius: 4px;'
+      : 'color: #dc2626; font-weight: bold; background: #fef2f2; padding: 2px 6px; border-radius: 4px;'
+  );
+  console.log('Status HTTP:', status);
+  console.log('Data:', data);
+  console.log('Timestamp:', new Date().toLocaleTimeString());
+  console.groupEnd();
+}
+
 class DataService {
   // Simpan cache sementara di memori RAM (bukan localStorage)
   private memoryCache = new Map<string, CacheEntry<any>>();
@@ -61,10 +88,16 @@ class DataService {
       if (cached) return cached;
     }
 
+    const url = '/api/config';
+    logRequest('GET', url);
+
     try {
-      const res = await fetch('/api/config');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
+      const res = await fetch(url);
+      const json = await res.json().catch(() => ({}));
+      logResponse('GET', url, res.status, json);
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${json.error || res.statusText}`);
+
       if (json.status === 'success' && json.data) {
         this.currentConfig = {
           mode: 'neon',
@@ -76,7 +109,7 @@ class DataService {
         this.setCachedData('config', this.currentConfig);
         return this.currentConfig;
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('[DataService] Gagal memuat konfigurasi dari database:', err);
     }
     return this.currentConfig;
@@ -86,22 +119,34 @@ class DataService {
     this.currentConfig = { ...this.currentConfig, ...config };
     this.invalidateCache('config' as any);
 
-    const res = await fetch('/api/config', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        kepala_desa: config.kepala_desa ?? '',
-        mode: config.mode ?? 'neon'
-      })
-    });
+    const url = '/api/config';
+    const payload = {
+      kepala_desa: config.kepala_desa ?? '',
+      mode: config.mode ?? 'neon'
+    };
 
-    if (!res.ok) {
-      throw new Error(`Gagal menyimpan konfigurasi ke server (HTTP ${res.status})`);
-    }
+    logRequest('PUT', url, payload);
 
-    const json = await res.json();
-    if (json.status !== 'success') {
-      throw new Error(json.error ?? 'Gagal menyimpan konfigurasi');
+    try {
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const json = await res.json().catch(() => ({}));
+      logResponse('PUT', url, res.status, json);
+
+      if (!res.ok) {
+        throw new Error(json.error || `HTTP ${res.status}`);
+      }
+
+      if (json.status !== 'success') {
+        throw new Error(json.error ?? 'Gagal menyimpan konfigurasi');
+      }
+    } catch (err: any) {
+      console.error('[DataService] Gagal menyimpan config:', err);
+      throw err;
     }
   }
 
@@ -116,19 +161,25 @@ class DataService {
       }
     }
 
+    const url = `/api/collection/${collection}`;
+    logRequest('GET', url);
+
     try {
-      const res = await fetch(`/api/collection/${collection}`);
+      const res = await fetch(url);
+      const json = await res.json().catch(() => ({}));
+      logResponse('GET', url, res.status, json);
+
       if (!res.ok) {
-        throw new Error(`HTTP ${res.status} saat memuat ${collection}`);
+        throw new Error(`HTTP ${res.status} saat memuat ${collection}: ${json.error || res.statusText}`);
       }
-      const json = await res.json();
+
       if (json.status === 'success' && Array.isArray(json.data)) {
         const list = json.data as T[];
         this.setCachedData(collection, list);
         return list;
       }
       return [];
-    } catch (err) {
+    } catch (err: any) {
       console.error(`[DataService] Gagal memuat koleksi ${collection} dari database:`, err);
       return [];
     }
@@ -145,22 +196,32 @@ class DataService {
     // Bersihkan cache in-memory agar tampilan langsung terupdate
     this.invalidateCache(collection);
 
-    const res = await fetch(`/api/collection/${collection}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(item)
-    });
+    const url = `/api/collection/${collection}`;
+    logRequest('POST', url, item);
 
-    if (!res.ok) {
-      throw new Error(`Gagal menyimpan ${collection} ke database (HTTP ${res.status})`);
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item)
+      });
+
+      const json = await res.json().catch(() => ({}));
+      logResponse('POST', url, res.status, json);
+
+      if (!res.ok) {
+        throw new Error(json.error || `HTTP ${res.status}: Gagal menyimpan ${collection}`);
+      }
+
+      if (json.status === 'success') {
+        return item;
+      }
+
+      throw new Error(json.error ?? `Gagal menyimpan ${collection}`);
+    } catch (err: any) {
+      console.error(`[DataService] Gagal menyimpan item ${collection}:`, err);
+      throw err;
     }
-
-    const json = await res.json();
-    if (json.status === 'success') {
-      return item;
-    }
-
-    throw new Error(json.error ?? `Gagal menyimpan ${collection}`);
   }
 
   // ──────────────────────────────────────────────────────────
@@ -169,20 +230,30 @@ class DataService {
   async deleteItem(collection: CollectionName, id: string): Promise<boolean> {
     this.invalidateCache(collection);
 
-    const res = await fetch(`/api/item/${collection}/${id}`, {
-      method: 'DELETE'
-    });
+    const url = `/api/item/${collection}/${id}`;
+    logRequest('DELETE', url, { id });
 
-    if (!res.ok) {
-      throw new Error(`Gagal menghapus item dari ${collection} di database (HTTP ${res.status})`);
+    try {
+      const res = await fetch(url, {
+        method: 'DELETE'
+      });
+
+      const json = await res.json().catch(() => ({}));
+      logResponse('DELETE', url, res.status, json);
+
+      if (!res.ok) {
+        throw new Error(json.error || `HTTP ${res.status}: Gagal menghapus item dari ${collection}`);
+      }
+
+      if (json.status === 'success') {
+        return true;
+      }
+
+      throw new Error(json.error ?? `Gagal menghapus item dari ${collection}`);
+    } catch (err: any) {
+      console.error(`[DataService] Gagal menghapus item ${collection}:`, err);
+      throw err;
     }
-
-    const json = await res.json();
-    if (json.status === 'success') {
-      return true;
-    }
-
-    throw new Error(json.error ?? `Gagal menghapus item dari ${collection}`);
   }
 
   resetAllData() {

@@ -79,9 +79,17 @@ const rawConn =
   process.env.JUBELAN_POSTGRES_URL ||
   process.env.DATABASE_URL ||
   process.env.JUBELAN_DATABASE_URL_UNPOOLED ||
+  process.env.JUBELAN_POSTGRES_URL_NON_POOLING ||
+  process.env.POSTGRES_PRISMA_URL ||
+  process.env.JUBELAN_POSTGRES_PRISMA_URL ||
   '';
 
 const connectionString = rawConn.trim().replace(/^["']|["']$/g, '');
 
+if (!connectionString) {
+  console.warn('[DB WARNING] Database connection string tidak ditemukan di Environment Variables!');
+}
+
 const sql = neon(connectionString);
 export const db = drizzle(sql, { schema });
+
