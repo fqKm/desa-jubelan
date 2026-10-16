@@ -1,80 +1,60 @@
 import { put } from '@vercel/blob';
 
 /**
- * Vercel Serverless Function (Edge Runtime)
- * Route: POST /api/upload
- * Body: FormData with field "file"
+ * Vercel Serverless Function (Node.js Runtime)
+ * Route: POST /api/upload?filename=...
+ * Body: Raw File / Stream (bukan FormData agar kompatibel murni dengan Node.js stream)
  * Returns: { status: 'success', url: string }
  */
-
-export const config = {
-  runtime: 'edge',
-};
-
-export default async function handler(req: Request) {
+export default async function handler(req: any, res?: any) {
   if (req.method !== 'POST') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+    if (res && typeof res.status === 'function') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
   }
 
   try {
-    console.log('[Upload] Processing upload request...');
-    const formData = await req.formData();
-    const file = formData.get('file') as File | null;
-
-    if (!file) {
-      console.warn('[Upload] File tidak ditemukan di FormData');
-      return Response.json({ error: 'No file provided' }, { status: 400 });
-    }
-
-    console.log(`[Upload] File received: ${file.name}, size: ${file.size} bytes, type: ${file.type}`);
-
-    // Validasi tipe file
-    const allowedTypes = [
-      'image/jpeg', 'image/png', 'image/webp', 'image/gif',
-      'application/pdf'
-    ];
-    if (!allowedTypes.includes(file.type)) {
-      return Response.json(
-        { error: 'Tipe file tidak didukung. Gunakan JPG, PNG, WebP, atau PDF.' },
-        { status: 400 }
-      );
-    }
-
-    // Validasi ukuran (max 5 MB)
-    const MAX_SIZE = 5 * 1024 * 1024;
-    if (file.size > MAX_SIZE) {
-      return Response.json(
-        { error: 'Ukuran file terlalu besar. Maksimum 5 MB.' },
-        { status: 400 }
-      );
-    }
-
-    // Buat nama file unik dengan timestamp
-    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const url = new URL(req.url || '', 'http://localhost');
+    const rawFilename = url.searchParams.get('filename') || req.query?.filename || `upload-${Date.now()}`;
+    const safeName = String(rawFilename).replace(/[^a-zA-Z0-9.-]/g, '_');
     const filename = `desa-jubelan/${Date.now()}-${safeName}`;
 
+    const contentType = req.headers?.['content-type'] || 'application/octet-stream';
     const token =
       process.env.BLOB_READ_WRITE_TOKEN ||
       process.env.JUBELAN_READ_WRITE_TOKEN ||
       process.env.VERCEL_BLOB_READ_WRITE_TOKEN;
 
     if (!token) {
-      console.warn('[Upload WARNING] BLOB_READ_WRITE_TOKEN tidak ditemukan di env!');
+      console.warn('[Upload WARNING] BLOB_READ_WRITE_TOKEN tidak ditemukan di environment variables!');
     }
 
-    const blob = await put(filename, file, {
+    // Node.js req merupakan Readable Stream yang langsung didukung oleh @vercel/blob
+    const blob = await put(filename, req, {
       access: 'public',
-      contentType: file.type,
+      contentType,
       ...(token ? { token } : {})
     });
 
-    console.log(`[Upload SUCCESS] File uploaded to: ${blob.url}`);
-    return Response.json({ status: 'success', url: blob.url });
+    console.log(`[Upload SUCCESS] File uploaded: ${blob.url}`);
+
+    if (res && typeof res.status === 'function') {
+      return res.status(200).json({ status: 'success', url: blob.url });
+    }
+    return new Response(JSON.stringify({ status: 'success', url: blob.url }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (err: any) {
     console.error('[Upload Error]', err);
-    return Response.json({
-      error: 'Upload gagal: ' + (err?.message || 'Error uploading to Blob'),
-      details: String(err)
-    }, { status: 500 });
+    const msg = err?.message || 'Error uploading to Blob';
+    if (res && typeof res.status === 'function') {
+      return res.status(500).json({ error: 'Upload gagal: ' + msg });
+    }
+    return new Response(JSON.stringify({ error: 'Upload gagal: ' + msg }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }

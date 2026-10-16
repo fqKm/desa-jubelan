@@ -53,11 +53,13 @@ export const MediumEditor: React.FC<MediumEditorProps> = ({
     console.groupEnd();
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetch('/api/upload', {
+      const uploadUrl = `/api/upload?filename=${encodeURIComponent(file.name)}`;
+      const res = await fetch(uploadUrl, {
         method: 'POST',
-        body: formData
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream'
+        },
+        body: file
       });
       const data = await res.json().catch(() => ({}));
 
