@@ -56,6 +56,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [editingItem, setEditingItem] = useState<any>(null);
   const [umkmFoto, setUmkmFoto] = useState<string>('');
   const [uploadingFoto, setUploadingFoto] = useState<boolean>(false);
+  const [dokumenFileUrl, setDokumenFileUrl] = useState<string>('');
+  const [dokumenFileName, setDokumenFileName] = useState<string>('');
+  const [dokumenFileSize, setDokumenFileSize] = useState<string>('');
+  const [uploadingDokumen, setUploadingDokumen] = useState<boolean>(false);
+  const [kategoriDokumen, setKategoriDokumen] = useState<string>('Peraturan Desa');
+  const [kategoriDokumenCustom, setKategoriDokumenCustom] = useState<string>('');
 
   // Form states
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -134,6 +140,48 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     }
   };
 
+  const formatFileSize = (bytes: number): string => {
+    if (!bytes || isNaN(bytes)) return '1.0 MB';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  // Upload Berkas Dokumen PDF/File ke Vercel Blob
+  const handleDokumenFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const sizeStr = formatFileSize(file.size);
+    setDokumenFileName(file.name);
+    setDokumenFileSize(sizeStr);
+    setUploadingDokumen(true);
+
+    try {
+      const uploadUrl = `/api/upload?filename=${encodeURIComponent(file.name)}`;
+      const res = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream'
+        },
+        body: file
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data.url) {
+        setDokumenFileUrl(data.url);
+        showToast('Berkas dokumen berhasil diunggah ke Vercel Blob!');
+      } else {
+        showToast('Gagal upload dokumen ke Blob: ' + (data.error || `HTTP ${res.status}`));
+      }
+    } catch (err: any) {
+      console.error('[AdminPanel] Error upload dokumen:', err);
+      showToast('Koneksi upload dokumen gagal: ' + (err?.message || 'Error'));
+    } finally {
+      setUploadingDokumen(false);
+    }
+  };
+
   // Kalkulasi statistik
   const totalJiwa = dusunList.reduce((acc, curr) => acc + (Number(curr.jumlah_jiwa) || 0), 0);
   const totalKk = dusunList.reduce((acc, curr) => acc + (Number(curr.jumlah_kk) || 0), 0);
@@ -198,14 +246,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const handleSaveDokumen = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    const finalKategori = kategoriDokumen === 'Lainnya'
+      ? (kategoriDokumenCustom.trim() || 'Lainnya')
+      : kategoriDokumen;
+
+    const finalUrl = dokumenFileUrl || editingItem?.file_url;
+    if (!finalUrl) {
+      showToast('Mohon unggah berkas dokumen (PDF) terlebih dahulu.');
+      return;
+    }
+
     const item: Partial<Dokumen> = {
       id: editingItem?.id,
       nama: fd.get('nama') as string,
-      kategori: fd.get('kategori') as string,
-      ukuran: (fd.get('ukuran') as string) || '1.5 MB',
-      file_url: fd.get('file_url') as string,
-      deskripsi: fd.get('deskripsi') as string,
-      tanggal: new Date().toISOString().split('T')[0],
+      kategori: finalKategori,
+      ukuran: dokumenFileSize || editingItem?.ukuran || '1.0 MB',
+      file_url: finalUrl,
+      deskripsi: (fd.get('deskripsi') as string) || '',
+      tanggal: editingItem?.tanggal || new Date().toISOString().split('T')[0],
       status: 'public'
     };
 
@@ -213,8 +271,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       await dataService.saveItem('dokumen', item);
       setModalType('none');
       setEditingItem(null);
+      setDokumenFileUrl('');
+      setDokumenFileName('');
+      setDokumenFileSize('');
       onRefreshData();
-      showToast('Dokumen publik berhasil diunggah!');
+      showToast('Dokumen publik berhasil disimpan!');
     } catch (err: any) {
       showToast('Gagal menyimpan dokumen: ' + (err?.message || 'Error koneksi'));
     }
@@ -494,7 +555,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </button>
             )}
             {activeTab === 'dokumen' && (
-              <button className="btn btn-primary" onClick={() => { setEditingItem(null); setModalType('dokumen'); }}>
+              <button className="btn btn-primary" onClick={() => {
+                setEditingItem(null);
+                setDokumenFileUrl('');
+                setDokumenFileName('');
+                setDokumenFileSize('');
+                setKategoriDokumen('Peraturan Desa');
+                setKategoriDokumenCustom('');
+                setModalType('dokumen');
+              }}>
                 <UploadCloud size={16} />
                 <span>Unggah Dokumen</span>
               </button>
@@ -762,9 +831,32 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         </a>
                       </td>
                       <td>
-                        <button className="btn-icon danger" title="Hapus" onClick={() => handleDelete('dokumen', doc.id)}>
-                          <Trash2 size={15} />
-                        </button>
+                        <div className="action-row">
+                          <button
+                            className="btn-icon"
+                            title="Edit"
+                            onClick={() => {
+                              setEditingItem(doc);
+                              setDokumenFileUrl(doc.file_url || '');
+                              setDokumenFileName(doc.nama || '');
+                              setDokumenFileSize(doc.ukuran || '1.0 MB');
+                              const isStandard = ['Peraturan Desa', 'Transparansi Anggaran', 'Layanan Warga', 'Rencana Pembangunan'].includes(doc.kategori);
+                              if (isStandard) {
+                                setKategoriDokumen(doc.kategori);
+                                setKategoriDokumenCustom('');
+                              } else {
+                                setKategoriDokumen('Lainnya');
+                                setKategoriDokumenCustom(doc.kategori || '');
+                              }
+                              setModalType('dokumen');
+                            }}
+                          >
+                            <Edit2 size={15} />
+                          </button>
+                          <button className="btn-icon danger" title="Hapus" onClick={() => handleDelete('dokumen', doc.id)}>
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1140,43 +1232,109 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         <div className="modal-backdrop">
           <div className="modal-dialog">
             <div className="modal-header">
-              <h3>Unggah Dokumen Publik</h3>
+              <h3>{editingItem ? 'Edit Dokumen Publik' : 'Unggah Dokumen Publik'}</h3>
               <button className="btn-close" onClick={() => setModalType('none')}>&times;</button>
             </div>
             <form onSubmit={handleSaveDokumen}>
               <div className="modal-body">
                 <div className="form-group">
                   <label className="form-label">Nama Dokumen / Regulasi *</label>
-                  <input type="text" name="nama" required className="form-control" placeholder="Contoh: Peraturan Desa No. 04 Tahun 2026" />
+                  <input
+                    type="text"
+                    name="nama"
+                    required
+                    className="form-control"
+                    defaultValue={editingItem?.nama || ''}
+                    placeholder="Contoh: Peraturan Desa No. 04 Tahun 2026"
+                  />
                 </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Kategori Dokumen</label>
-                    <select name="kategori" className="form-control">
-                      <option value="Peraturan Desa">Peraturan Desa (Perdes)</option>
-                      <option value="Transparansi Anggaran">Transparansi Anggaran (APBDes)</option>
-                      <option value="Layanan Warga">Layanan Formulir Warga</option>
-                      <option value="Rencana Pembangunan">Rencana Pembangunan (RKPDes)</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Ukuran Berkas</label>
-                    <input type="text" name="ukuran" className="form-control" defaultValue="1.5 MB" />
-                  </div>
-                </div>
+
                 <div className="form-group">
-                  <label className="form-label">Tautan Google Drive / PDF *</label>
-                  <input type="url" name="file_url" required className="form-control" placeholder="https://drive.google.com/file/d/..." />
-                  <small style={{ color: 'var(--text-muted)', fontSize: 11 }}>Pastikan izin file di Google Drive adalah 'Anyone with link can view'.</small>
+                  <label className="form-label">Jenis / Kategori Dokumen</label>
+                  <select
+                    className="form-control"
+                    value={kategoriDokumen}
+                    onChange={e => setKategoriDokumen(e.target.value)}
+                  >
+                    <option value="Peraturan Desa">Peraturan Desa (Perdes)</option>
+                    <option value="Transparansi Anggaran">Transparansi Anggaran (APBDes)</option>
+                    <option value="Layanan Warga">Layanan Formulir Warga</option>
+                    <option value="Rencana Pembangunan">Rencana Pembangunan (RKPDes)</option>
+                    <option value="Lainnya">Lainnya...</option>
+                  </select>
                 </div>
+
+                {kategoriDokumen === 'Lainnya' && (
+                  <div className="form-group">
+                    <label className="form-label">Tuliskan Jenis / Kategori Dokumen *</label>
+                    <input
+                      type="text"
+                      required
+                      className="form-control"
+                      value={kategoriDokumenCustom}
+                      onChange={e => setKategoriDokumenCustom(e.target.value)}
+                      placeholder="Contoh: Surat Keputusan / Panduan Kegiatan"
+                    />
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label className="form-label">Berkas Dokumen * (Unggah PDF / File ke Blob Storage)</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                    <label style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      backgroundColor: '#f8fafc',
+                      border: '1.5px dashed #cbd5e1',
+                      borderRadius: 8,
+                      padding: '10px 18px',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: '#334155',
+                      cursor: uploadingDokumen ? 'not-allowed' : 'pointer'
+                    }}>
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.zip,application/pdf"
+                        style={{ display: 'none' }}
+                        onChange={handleDokumenFileUpload}
+                        disabled={uploadingDokumen}
+                      />
+                      <UploadCloud size={16} />
+                      <span>{uploadingDokumen ? 'Mengunggah ke Blob...' : dokumenFileUrl ? 'Ganti Berkas Dokumen' : 'Pilih Berkas PDF / Dokumen'}</span>
+                    </label>
+
+                    {(dokumenFileUrl || editingItem?.file_url) && (
+                      <span style={{ fontSize: 13, color: '#16a34a', fontWeight: 600 }}>
+                        ✓ Berkas Siap ({dokumenFileSize || editingItem?.ukuran || '1.0 MB'})
+                      </span>
+                    )}
+                  </div>
+
+                  {(dokumenFileName || editingItem?.file_url) && (
+                    <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text-muted)' }}>
+                      📄 <strong>{dokumenFileName || 'Berkas tersimpan'}</strong> {dokumenFileSize ? `(${dokumenFileSize})` : editingItem?.ukuran ? `(${editingItem.ukuran})` : ''}
+                    </div>
+                  )}
+                </div>
+
                 <div className="form-group">
                   <label className="form-label">Deskripsi Dokumen</label>
-                  <textarea name="deskripsi" rows={2} className="form-control" placeholder="Keterangan perihal isi dokumen"></textarea>
+                  <textarea
+                    name="deskripsi"
+                    rows={2}
+                    className="form-control"
+                    defaultValue={editingItem?.deskripsi || ''}
+                    placeholder="Keterangan perihal isi dokumen..."
+                  ></textarea>
                 </div>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-outline" onClick={() => setModalType('none')}>Batal</button>
-                <button type="submit" className="btn btn-primary">Simpan Dokumen</button>
+                <button type="submit" className="btn btn-primary" disabled={uploadingDokumen}>
+                  {uploadingDokumen ? 'Mengunggah...' : 'Simpan Dokumen'}
+                </button>
               </div>
             </form>
           </div>

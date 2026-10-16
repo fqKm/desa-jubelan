@@ -633,11 +633,8 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
             </div>
 
             <div className="contact-methods-block">
-              <a href="https://wa.me/6281234567891" target="_blank" rel="noreferrer" className="contact-method-item">
-                <Phone size={14} strokeWidth={2} />
-                <span>WhatsApp Layanan Desa: (0298) 713313</span>
-              </a>
               <span className="contact-method-item">
+                <span>Telp: (0298) 713313</span>
                 <span>Email: desajubelan04@gmail.com</span>
               </span>
             </div>
