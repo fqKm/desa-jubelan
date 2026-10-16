@@ -26,7 +26,7 @@ export default async function handler(req: any, res?: any) {
         result[row.key] = row.value;
       }
       return sendResponse(res, 200, { status: 'success', data: result }, {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=900'
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
       });
     }
 

@@ -7,7 +7,8 @@ interface CacheEntry<T> {
   timestamp: number;
 }
 
-const DEFAULT_CACHE_TTL_MS = 60 * 1000; // 1 menit in-memory cache
+const CACHE_STORAGE_PREFIX = 'desa_jubelan_cache_';
+const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 menit cache
 
 // Helper untuk visual logging request & response di Console Browser
 function logRequest(method: string, url: string, payload?: any) {
@@ -37,7 +38,7 @@ function logResponse(method: string, url: string, status: number, data?: any) {
 }
 
 class DataService {
-  // Simpan cache sementara di memori RAM (bukan localStorage)
+  // Layer 1: In-Memory RAM Cache (akses instan 0ms)
   private memoryCache = new Map<string, CacheEntry<any>>();
 
   private currentConfig: AppConfig = {
@@ -48,30 +49,77 @@ class DataService {
   };
 
   // ──────────────────────────────────────────────────────────
-  // IN-MEMORY CACHE HELPERS
+  // DUAL CACHE HELPERS (Memory + SessionStorage)
   // ──────────────────────────────────────────────────────────
   private getCachedData<T>(key: string, ttlMs = DEFAULT_CACHE_TTL_MS): T | null {
-    const entry = this.memoryCache.get(key);
-    if (!entry) return null;
-    if (Date.now() - entry.timestamp < ttlMs) {
-      return entry.data;
+    // 1. Cek memory RAM
+    const mem = this.memoryCache.get(key);
+    if (mem && Date.now() - mem.timestamp < ttlMs) {
+      return mem.data;
     }
+
+    // 2. Cek sessionStorage (agar bertahan saat F5 / browser reload)
+    try {
+      const stored = sessionStorage.getItem(CACHE_STORAGE_PREFIX + key);
+      if (stored) {
+        const parsed: CacheEntry<T> = JSON.parse(stored);
+        if (Date.now() - parsed.timestamp < ttlMs) {
+          this.memoryCache.set(key, parsed);
+          return parsed.data;
+        } else {
+          sessionStorage.removeItem(CACHE_STORAGE_PREFIX + key);
+        }
+      }
+    } catch {}
+
     this.memoryCache.delete(key);
     return null;
   }
 
   private setCachedData<T>(key: string, data: T) {
-    this.memoryCache.set(key, {
-      data,
-      timestamp: Date.now()
-    });
+    const entry: CacheEntry<T> = { data, timestamp: Date.now() };
+    this.memoryCache.set(key, entry);
+    try {
+      sessionStorage.setItem(CACHE_STORAGE_PREFIX + key, JSON.stringify(entry));
+    } catch {}
+  }
+
+  // Update item di cache secara instan (Write-Through)
+  private updateCachedItem<T extends { id?: string }>(collection: CollectionName, item: T) {
+    const current = this.getCachedData<T[]>(collection) || [];
+    const index = current.findIndex(x => x.id === item.id);
+    let updated: T[];
+    if (index >= 0) {
+      updated = [...current];
+      updated[index] = { ...updated[index], ...item };
+    } else {
+      updated = [item, ...current];
+    }
+    this.setCachedData(collection, updated);
+  }
+
+  // Hapus item dari cache secara instan (Write-Through)
+  private removeCachedItem<T extends { id?: string }>(collection: CollectionName, id: string) {
+    const current = this.getCachedData<T[]>(collection);
+    if (current && Array.isArray(current)) {
+      const updated = current.filter(x => x.id !== id);
+      this.setCachedData(collection, updated);
+    }
   }
 
   invalidateCache(collection?: CollectionName) {
     if (collection) {
       this.memoryCache.delete(collection);
+      try {
+        sessionStorage.removeItem(CACHE_STORAGE_PREFIX + collection);
+      } catch {}
     } else {
       this.memoryCache.clear();
+      try {
+        Object.keys(sessionStorage).forEach(k => {
+          if (k.startsWith(CACHE_STORAGE_PREFIX)) sessionStorage.removeItem(k);
+        });
+      } catch {}
     }
   }
 
@@ -88,11 +136,14 @@ class DataService {
       if (cached) return cached;
     }
 
-    const url = '/api/config';
+    const url = forceRefresh ? `/api/config?_t=${Date.now()}` : '/api/config';
     logRequest('GET', url);
 
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
       const json = await res.json().catch(() => ({}));
       logResponse('GET', url, res.status, json);
 
@@ -117,7 +168,7 @@ class DataService {
 
   async saveConfig(config: AppConfig): Promise<void> {
     this.currentConfig = { ...this.currentConfig, ...config };
-    this.invalidateCache('config' as any);
+    this.setCachedData('config', this.currentConfig);
 
     const url = '/api/config';
     const payload = {
@@ -151,23 +202,31 @@ class DataService {
   }
 
   // ──────────────────────────────────────────────────────────
-  // GET COLLECTION (Langsung dari Database via /api/collection)
+  // GET COLLECTION (Cache-First: Ambil cache dulu, jika kosong ke DB)
   // ──────────────────────────────────────────────────────────
   async getCollection<T>(collection: CollectionName, forceRefresh = false): Promise<T[]> {
+    // 1. Cek cache terlebih dahulu (jika bukan force refresh)
     if (!forceRefresh) {
       const cached = this.getCachedData<T[]>(collection);
-      if (cached) {
+      if (cached && Array.isArray(cached) && cached.length > 0) {
+        console.log(`%c[CACHE HIT] ${collection} (${cached.length} items)`, 'color: #059669; font-weight: bold;');
         return cached;
       }
     }
 
-    const url = `/api/collection/${collection}`;
-    logRequest('GET', url);
+    // 2. Jika cache kosong atau forceRefresh = true, baru request ke Database
+    const url = forceRefresh 
+      ? `/api/collection/${collection}?_t=${Date.now()}` 
+      : `/api/collection/${collection}`;
+    logRequest('GET (DB)', url);
 
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
       const json = await res.json().catch(() => ({}));
-      logResponse('GET', url, res.status, json);
+      logResponse('GET (DB)', url, res.status, json);
 
       if (!res.ok) {
         throw new Error(`HTTP ${res.status} saat memuat ${collection}: ${json.error || res.statusText}`);
@@ -175,26 +234,25 @@ class DataService {
 
       if (json.status === 'success' && Array.isArray(json.data)) {
         const list = json.data as T[];
+        // Simpan ke cache seketika
         this.setCachedData(collection, list);
         return list;
       }
       return [];
     } catch (err: any) {
       console.error(`[DataService] Gagal memuat koleksi ${collection} dari database:`, err);
-      return [];
+      // Fallback data cache jika koneksi DB bermasalah
+      return this.getCachedData<T[]>(collection) || [];
     }
   }
 
   // ──────────────────────────────────────────────────────────
-  // SAVE / UPSERT ITEM (Langsung ke Database)
+  // SAVE / UPSERT ITEM (Write-Through: Simpan ke DB & Update Cache)
   // ──────────────────────────────────────────────────────────
   async saveItem<T extends { id?: string }>(collection: CollectionName, item: T): Promise<T> {
     if (!item.id) {
       item.id = `${collection}-${Date.now()}`;
     }
-
-    // Bersihkan cache in-memory agar tampilan langsung terupdate
-    this.invalidateCache(collection);
 
     const url = `/api/collection/${collection}`;
     logRequest('POST', url, item);
@@ -214,6 +272,8 @@ class DataService {
       }
 
       if (json.status === 'success') {
+        // Update cache seketika (tanpa perlu reload dari database)
+        this.updateCachedItem(collection, item);
         return item;
       }
 
@@ -225,11 +285,9 @@ class DataService {
   }
 
   // ──────────────────────────────────────────────────────────
-  // DELETE ITEM (Langsung ke Database)
+  // DELETE ITEM (Write-Through: Hapus dari DB & Hapus dari Cache)
   // ──────────────────────────────────────────────────────────
   async deleteItem(collection: CollectionName, id: string): Promise<boolean> {
-    this.invalidateCache(collection);
-
     const url = `/api/item/${collection}/${id}`;
     logRequest('DELETE', url, { id });
 
@@ -246,6 +304,8 @@ class DataService {
       }
 
       if (json.status === 'success') {
+        // Hapus item dari cache seketika
+        this.removeCachedItem(collection, id);
         return true;
       }
 
@@ -257,7 +317,7 @@ class DataService {
   }
 
   resetAllData() {
-    this.memoryCache.clear();
+    this.invalidateCache();
   }
 }
 

@@ -31,7 +31,7 @@ export default async function handler(req: any, res?: any) {
         res,
         200,
         { status: 'success', data },
-        { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=600' }
+        { 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate' }
       );
     }
 

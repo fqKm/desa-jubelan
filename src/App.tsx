@@ -62,15 +62,15 @@ export const App: React.FC = () => {
     }
   };
 
-  // Silent refresh: updates data without showing loading screen (forces fresh fetch)
+  // Silent refresh: membaca data dari cache yang terupdate instan
   const silentRefresh = async () => {
     try {
       const [dusun, umkm, berita, dokumen, pengumuman] = await Promise.all([
-        dataService.getCollection<Dusun>('dusun', true),
-        dataService.getCollection<UMKM>('umkm', true),
-        dataService.getCollection<Berita>('berita', true),
-        dataService.getCollection<Dokumen>('dokumen', true),
-        dataService.getCollection<Pengumuman>('pengumuman', true),
+        dataService.getCollection<Dusun>('dusun'),
+        dataService.getCollection<UMKM>('umkm'),
+        dataService.getCollection<Berita>('berita'),
+        dataService.getCollection<Dokumen>('dokumen'),
+        dataService.getCollection<Pengumuman>('pengumuman'),
       ]);
       setDusunList(dusun);
       setUmkmList(umkm);
