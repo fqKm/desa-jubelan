@@ -38,23 +38,25 @@ export const App: React.FC = () => {
   const [beritaList, setBeritaList] = useState<Berita[]>([]);
   const [dokumenList, setDokumenList] = useState<Dokumen[]>([]);
   const [pengumumanList, setPengumumanList] = useState<Pengumuman[]>([]);
-
+  const [kepalaDesa, setKepalaDesa] = useState<string>('Bapak Kepala Desa');
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [dusun, umkm, berita, dokumen, pengumuman] = await Promise.all([
+      const [dusun, umkm, berita, dokumen, pengumuman, cfg] = await Promise.all([
         dataService.getCollection<Dusun>('dusun'),
         dataService.getCollection<UMKM>('umkm'),
         dataService.getCollection<Berita>('berita'),
         dataService.getCollection<Dokumen>('dokumen'),
         dataService.getCollection<Pengumuman>('pengumuman'),
+        dataService.loadConfig(),
       ]);
       setDusunList(dusun);
       setUmkmList(umkm);
       setBeritaList(berita);
       setDokumenList(dokumen);
       setPengumumanList(pengumuman);
+      if (cfg?.kepala_desa) setKepalaDesa(cfg.kepala_desa);
     } catch (err) {
       console.error('Error loading data:', err);
     } finally {
@@ -65,18 +67,20 @@ export const App: React.FC = () => {
   // Silent refresh: membaca data dari cache yang terupdate instan
   const silentRefresh = async () => {
     try {
-      const [dusun, umkm, berita, dokumen, pengumuman] = await Promise.all([
+      const [dusun, umkm, berita, dokumen, pengumuman, cfg] = await Promise.all([
         dataService.getCollection<Dusun>('dusun'),
         dataService.getCollection<UMKM>('umkm'),
         dataService.getCollection<Berita>('berita'),
         dataService.getCollection<Dokumen>('dokumen'),
         dataService.getCollection<Pengumuman>('pengumuman'),
+        dataService.loadConfig(true),
       ]);
       setDusunList(dusun);
       setUmkmList(umkm);
       setBeritaList(berita);
       setDokumenList(dokumen);
       setPengumumanList(pengumuman);
+      if (cfg?.kepala_desa) setKepalaDesa(cfg.kepala_desa);
     } catch (err) {
       console.error('Error refreshing data:', err);
     }
@@ -161,6 +165,7 @@ export const App: React.FC = () => {
           onSelectNews={(news) => setActiveArticle(news)}
           theme={theme}
           onToggleTheme={toggleTheme}
+          kepalaDesa={kepalaDesa}
         />
       )}
 

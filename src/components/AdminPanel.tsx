@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   Newspaper,
@@ -16,7 +16,8 @@ import {
   LogOut,
   ShieldCheck,
   KeyRound,
-  UserPlus
+  UserPlus,
+  Settings
 } from 'lucide-react';
 import type { Dusun, UMKM, Berita, Dokumen, Pengumuman } from '../types';
 import { dataService } from '../services/dataService';
@@ -62,6 +63,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [uploadingDokumen, setUploadingDokumen] = useState<boolean>(false);
   const [kategoriDokumen, setKategoriDokumen] = useState<string>('Peraturan Desa');
   const [kategoriDokumenCustom, setKategoriDokumenCustom] = useState<string>('');
+  const [namaKades, setNamaKades] = useState<string>(() => dataService.getConfig().kepala_desa || 'Bapak Kepala Desa');
+  const [savingKades, setSavingKades] = useState<boolean>(false);
 
   // Form states
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -84,6 +87,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const showToast = (msg: string) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(null), 3000);
+  };
+
+  useEffect(() => {
+    dataService.loadConfig().then(cfg => {
+      if (cfg?.kepala_desa) setNamaKades(cfg.kepala_desa);
+    });
+  }, []);
+
+  const handleSaveKades = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!namaKades.trim()) {
+      showToast('Nama kepala desa tidak boleh kosong.');
+      return;
+    }
+    setSavingKades(true);
+    try {
+      await dataService.saveConfig({
+        ...dataService.getConfig(),
+        kepala_desa: namaKades.trim()
+      });
+      showToast('Nama Kepala Desa berhasil disimpan ke database!');
+      onRefreshData();
+    } catch (err: any) {
+      showToast('Gagal menyimpan nama Kepala Desa: ' + (err?.message || 'Error'));
+    } finally {
+      setSavingKades(false);
+    }
   };
 
   // Upload Foto UMKM ke Vercel Blob (dengan fallback Base64 Data URL)
@@ -478,8 +508,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             className={`nav-btn ${activeTab === 'admins' ? 'active' : ''}`}
             onClick={() => setActiveTab('admins')}
           >
-            <ShieldCheck size={18} />
-            <span>Kredensial Admin</span>
+            <Settings size={18} />
+            <span>Pengaturan & Sistem</span>
           </button>
 
 
@@ -525,7 +555,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               {activeTab === 'umkm' && 'Data Pelaku Usaha & UMKM'}
               {activeTab === 'dokumen' && 'Repositori Dokumen Publik'}
               {activeTab === 'pengumuman' && 'Pemberitahuan & Pengumuman'}
-              {activeTab === 'admins' && 'Kelola Akses Admin'}
+              {activeTab === 'admins' && 'Pengaturan Desa & Akses Admin'}
             </h1>
             <p className="header-desc">Kelola dan perbarui informasi Desa Jubelan secara real-time</p>
           </div>
@@ -909,9 +939,57 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
 
 
-          {/* TAB: KREDENSIAL LOGIN ADMIN */}
+          {/* TAB: PENGATURAN & SISTEM */}
           {activeTab === 'admins' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              {/* Form Pengaturan Profil Kepala Desa */}
+              <div className="content-card" style={{ padding: 28 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                  <div style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 10,
+                    background: 'rgba(34, 197, 94, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--color-primary)'
+                  }}>
+                    <ShieldCheck size={22} />
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Profil & Nama Kepala Desa</h3>
+                    <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)' }}>
+                      Atur nama Kepala Desa yang menjabat untuk ditampilkan di informasi website desa.
+                    </p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleSaveKades} style={{ maxWidth: 650, marginTop: 16 }}>
+                  <div className="form-group">
+                    <label className="form-label">Nama Lengkap Kepala Desa *</label>
+                    <input
+                      type="text"
+                      required
+                      className="form-control"
+                      value={namaKades}
+                      onChange={e => setNamaKades(e.target.value)}
+                      placeholder="Contoh: Bapak Triyono, S.Sos."
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={savingKades}
+                    className="btn btn-primary"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 8 }}
+                  >
+                    <CheckCircle2 size={16} />
+                    <span>{savingKades ? 'Menyimpan ke Database...' : 'Simpan Nama Kepala Desa'}</span>
+                  </button>
+                </form>
+              </div>
+
               {/* Form Tambah Kredensial Baru */}
               <div className="content-card" style={{ padding: 28 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>

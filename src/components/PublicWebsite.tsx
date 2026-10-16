@@ -31,6 +31,7 @@ interface PublicWebsiteProps {
   onSelectNews?: (berita: Berita) => void;
   theme?: 'light' | 'dark';
   onToggleTheme?: () => void;
+  kepalaDesa?: string;
 }
 
 export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
@@ -43,6 +44,7 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
   onSelectNews,
   theme: propTheme,
   onToggleTheme: propToggleTheme,
+  kepalaDesa,
 }) => {
   // Theme state: synced with prop or fallback to localStorage
   const [internalTheme, setInternalTheme] = useState<'light' | 'dark'>(() => {
@@ -336,7 +338,7 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                 <div className="block-facts-list">
                   <div className="block-fact-item">
                     <span className="fact-key">Kepala Desa</span>
-                    <span className="fact-val">Bapak Kepala Desa</span>
+                    <span className="fact-val">{kepalaDesa || 'Bapak Kepala Desa'}</span>
                   </div>
                   <div className="block-fact-item">
                     <span className="fact-key">Total Kepala Keluarga</span>
@@ -633,10 +635,12 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
             </div>
 
             <div className="contact-methods-block">
-              <span className="contact-method-item">
+              <a href="tel:0298713313" className="contact-method-item">
                 <span>Telp: (0298) 713313</span>
+              </a>
+              <a href="mailto:desajubelan04@gmail.com" className="contact-method-item">
                 <span>Email: desajubelan04@gmail.com</span>
-              </span>
+              </a>
             </div>
           </div>
 
