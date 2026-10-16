@@ -3,7 +3,7 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { pgTable, text, integer, boolean, timestamp } from 'drizzle-orm/pg-core';
 
-// ── Schema Definitions ─────────────────────────────────────────
+// ── Schema Definitions (Sinkron dengan schema.sql) ─────────────
 
 export const dusun = pgTable('dusun', {
   id: text('id').primaryKey(),
@@ -37,6 +37,7 @@ export const berita = pgTable('berita', {
   judul: text('judul').notNull(),
   kategori: text('kategori').default('Umum'),
   penulis: text('penulis').default('Admin Desa'),
+  tanggal: text('tanggal').default(''),
   ringkasan: text('ringkasan').default(''),
   konten: text('konten').default(''),
   thumbnail: text('thumbnail').default(''),
@@ -50,19 +51,19 @@ export const dokumen = pgTable('dokumen', {
   nama: text('nama').notNull(),
   kategori: text('kategori').default('Umum'),
   ukuran: text('ukuran').default('1.5 MB'),
+  tanggal: text('tanggal').default(''),
   deskripsi: text('deskripsi').default(''),
   file_url: text('file_url').notNull(),
-  status: text('status').default('public'),
-  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow()
+  status: text('status').default('public')
 });
 
 export const pengumuman = pgTable('pengumuman', {
   id: text('id').primaryKey(),
   judul: text('judul').notNull(),
   konten: text('konten').notNull(),
+  tanggal: text('tanggal').default(''),
   is_penting: boolean('is_penting').default(false),
-  status: text('status').default('active'),
-  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow()
+  status: text('status').default('active')
 });
 
 export const config = pgTable('config', {
@@ -92,4 +93,3 @@ if (!connectionString) {
 
 const sql = neon(connectionString);
 export const db = drizzle(sql, { schema });
-
