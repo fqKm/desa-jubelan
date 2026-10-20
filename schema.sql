@@ -79,3 +79,10 @@ INSERT INTO config (key, value) VALUES
   ('kepala_desa', 'Bapak Kepala Desa'),
   ('mode', 'neon')
 ON CONFLICT (key) DO NOTHING;
+
+-- 7. Tabel Visi & Misi
+CREATE TABLE IF NOT EXISTS visimisi (
+  id      TEXT PRIMARY KEY,
+  type    TEXT NOT NULL CHECK (type IN ('vision', 'mission')),
+  content TEXT NOT NULL
+);

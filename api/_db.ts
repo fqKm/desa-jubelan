@@ -66,12 +66,18 @@ export const pengumuman = pgTable('pengumuman', {
   status: text('status').default('active')
 });
 
+export const visimisi = pgTable('visimisi', {
+  id: text('id').primaryKey(),
+  type: text('type').notNull(), // 'vision' | 'mission'
+  content: text('content').notNull()
+});
+
 export const config = pgTable('config', {
   key: text('key').primaryKey(),
   value: text('value').notNull()
 });
 
-const schema = { dusun, umkm, berita, dokumen, pengumuman, config };
+export const schema = { dusun, umkm, berita, dokumen, pengumuman, config, visimisi };
 
 // ── Database Connection ────────────────────────────────────────
 

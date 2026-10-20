@@ -15,7 +15,6 @@ import {
   ArrowUpRight,
   MapPin,
   Phone,
-  Download,
   Compass
 } from 'lucide-react';
 import { InteractiveKmlMap } from './InteractiveKmlMap';
@@ -72,6 +71,7 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
 
   // Selected News for Modal Read Story
   const [selectedNews, setSelectedNews] = useState<Berita | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<Dokumen | null>(null);
 
   const handleNavClick = () => {
     setMobileMenuOpen(false);
@@ -555,15 +555,12 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                       <span className="doc-name">{doc.nama}</span>
                       <span className="doc-file-badge">{doc.deskripsi} • {doc.ukuran}</span>
                     </div>
-                    <a
-                      href={doc.file_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="btn-doc-download"
-                      title="Unduh Berkas Dokumen"
-                    >
-                      <Download size={16} strokeWidth={2} />
-                    </a>
+                    <button
+                      type="button"
+                      className="btn-doc-preview"
+                      onClick={() => setPreviewDoc(doc)}
+                      title="Lihat Pratinjau Dokumen"
+                    >Lihat</button>
                   </div>
                 ))}
               </div>
@@ -586,6 +583,17 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                 </div>
               ))}
 
+              {previewDoc && (
+                <div className="doc-preview-modal" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                  <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', width: '80%', maxHeight: '90%' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h3>{previewDoc.nama}</h3>
+                      <button onClick={() => setPreviewDoc(null)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem' }}>✕</button>
+                    </div>
+                    <iframe src={previewDoc.file_url} style={{ width: '100%', height: '80vh', border: 'none' }} />
+                  </div>
+                </div>
+              )}
               <div className="office-hours-snippet">
                 <div><strong>Jam Pelayanan Balai Desa:</strong></div>
                 <div>Senin – Kamis : 08.00 – 14.30 WIB</div>
