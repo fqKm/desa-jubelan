@@ -1,5 +1,5 @@
 // api/vision-mission.ts
-import { db, visimisi } from './_db';
+import { db, visimisi } from './_db.js';
 import { sql } from 'drizzle-orm';
 import { eq } from 'drizzle-orm';
 
