@@ -132,7 +132,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   const handleSaveVisimisi = async () => {
     try {
-      await fetch('/api/vision-mission', {
+      const res = await fetch('/api/vision-mission', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -140,10 +140,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           mission: missionText.trim()
         })
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
       showToast('Visi & Misi berhasil disimpan');
-    } catch (e) {
+    } catch (e: any) {
       console.error('[AdminPanel] save visimisi', e);
-      showToast('Gagal menyimpan Visi & Misi');
+      showToast('Gagal menyimpan Visi & Misi: ' + (e?.message || 'Error'));
     }
   };
 

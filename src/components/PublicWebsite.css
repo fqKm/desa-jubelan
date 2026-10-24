@@ -1215,6 +1215,27 @@
   border-color: var(--site-text-primary);
 }
 
+.btn-doc-preview {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--site-border);
+  background-color: var(--site-bg-subtle);
+  color: var(--site-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-doc-preview:hover {
+  background-color: var(--site-accent-green);
+  color: #fff;
+  border-color: var(--site-accent-green);
+}
+
 /* Announcements Box */
 .announcements-panel {
   border-radius: 20px;

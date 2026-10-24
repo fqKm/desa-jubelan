@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type {
   Dusun,
   UMKM,
@@ -15,7 +15,8 @@ import {
   ArrowUpRight,
   MapPin,
   Phone,
-  Compass
+  Compass,
+  Eye
 } from 'lucide-react';
 import { InteractiveKmlMap } from './InteractiveKmlMap';
 import './PublicWebsite.css';
@@ -72,6 +73,20 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
   // Selected News for Modal Read Story
   const [selectedNews, setSelectedNews] = useState<Berita | null>(null);
   const [previewDoc, setPreviewDoc] = useState<Dokumen | null>(null);
+
+  // Dynamic Visi & Misi from database
+  const [visionList, setVisionList] = useState<string[]>([]);
+  const [missionText, setMissionText] = useState<string>('');
+
+  useEffect(() => {
+    fetch('/api/vision-mission')
+      .then(r => r.json())
+      .then((data: { vision: string[]; mission: string }) => {
+        if (data.vision) setVisionList(data.vision);
+        if (data.mission !== undefined) setMissionText(data.mission);
+      })
+      .catch(err => console.error('[PublicWebsite] load visimisi error', err));
+  }, []);
 
   const handleNavClick = () => {
     setMobileMenuOpen(false);
@@ -217,13 +232,25 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
             </div>
             <div className="overview-copy">
               <h3>Visi</h3>
-              <p className="visi-text">"Menjadi desa yang maju, mandiri, dan berkelanjutan."</p>
+              {visionList.length > 0 ? (
+                <ul className="misi-list-simple">
+                  {visionList.map((v, i) => (
+                    <li key={i}>{v}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="visi-text">"Menjadi desa yang maju, mandiri, dan berkelanjutan."</p>
+              )}
               <h3>Misi</h3>
-              <ul className="misi-list-simple">
-                <li>Meningkatkan kesejahteraan masyarakat melalui pembangunan infrastruktur.</li>
-                <li>Mendorong pertumbuhan ekonomi lokal dengan mendukung UMKM.</li>
-                <li>Melestarikan budaya dan lingkungan alam desa.</li>
-              </ul>
+              {missionText ? (
+                <p className="visi-text">{missionText}</p>
+              ) : (
+                <ul className="misi-list-simple">
+                  <li>Meningkatkan kesejahteraan masyarakat melalui pembangunan infrastruktur.</li>
+                  <li>Mendorong pertumbuhan ekonomi lokal dengan mendukung UMKM.</li>
+                  <li>Melestarikan budaya dan lingkungan alam desa.</li>
+                </ul>
+              )}
             </div>
           </div>
 
@@ -560,7 +587,7 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                       className="btn-doc-preview"
                       onClick={() => setPreviewDoc(doc)}
                       title="Lihat Pratinjau Dokumen"
-                    >Lihat</button>
+                    ><Eye size={16} strokeWidth={2} /></button>
                   </div>
                 ))}
               </div>
@@ -584,13 +611,18 @@ export const PublicWebsite: React.FC<PublicWebsiteProps> = ({
               ))}
 
               {previewDoc && (
-                <div className="doc-preview-modal" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                  <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', width: '80%', maxHeight: '90%' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <h3>{previewDoc.nama}</h3>
-                      <button onClick={() => setPreviewDoc(null)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem' }}>✕</button>
+                <div className="doc-preview-modal" onClick={(e) => { if (e.target === e.currentTarget) setPreviewDoc(null); }} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                  <div style={{ background: 'var(--color-surface, #fff)', padding: '1rem', borderRadius: '12px', width: '85%', maxWidth: '900px', maxHeight: '92vh', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                      <h3 style={{ margin: 0 }}>{previewDoc.nama}</h3>
+                      <button onClick={() => setPreviewDoc(null)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'inherit' }}>✕</button>
                     </div>
-                    <iframe src={previewDoc.file_url} style={{ width: '100%', height: '80vh', border: 'none' }} />
+                    <iframe
+                      src={`https://docs.google.com/gview?url=${encodeURIComponent(previewDoc.file_url)}&embedded=true`}
+                      sandbox="allow-scripts allow-same-origin"
+                      style={{ width: '100%', flex: 1, minHeight: '75vh', border: 'none', borderRadius: '8px' }}
+                      title={previewDoc.nama}
+                    />
                   </div>
                 </div>
               )}

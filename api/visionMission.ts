@@ -1,7 +1,7 @@
 // api/visionMission.ts
 import { db, visimisi } from './_db';
 import { sql } from 'drizzle-orm';
-import { eq } from 'drizzle-orm/expressions';
+import { eq } from 'drizzle-orm';
 
 export async function handler(req: Request) {
   const url = new URL(req.url);
